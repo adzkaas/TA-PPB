@@ -22,6 +22,16 @@ export function useWishlist(currentUser) {
     refresh()
   }, [userId, refresh])
 
+  // Listener otomatis: saat koneksi internet kembali online, sinkronkan data lokal ke Supabase
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('[useWishlist] Internet online kembali, menyinkronkan wishlist lokal ke Supabase...')
+      refresh()
+    }
+    window.addEventListener('online', handleOnline)
+    return () => window.removeEventListener('online', handleOnline)
+  }, [refresh])
+
   const addItem = useCallback(
     async (item) => {
       const result = await wishlistService.addItem({ ...item, user_id: userId }, userId)
