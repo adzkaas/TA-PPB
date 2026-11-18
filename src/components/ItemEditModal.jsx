@@ -48,14 +48,39 @@ export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveS
     try {
       let updated
       if (isPlant) {
-        updated = await plantService.updatePlant(item.id, formData)
+        const plantPayload = {
+          name: formData.name,
+          scientific_name: formData.scientific_name,
+          type: formData.type,
+          difficulty: formData.difficulty,
+          light: formData.light,
+          co2: formData.co2,
+          growth_rate: formData.growth_rate,
+          description: formData.description,
+          care_tips: formData.care_tips,
+          image_url: formData.image_url,
+        }
+        updated = await plantService.updatePlant(item.id, plantPayload)
       } else {
-        updated = await faunaService.updateFauna(item.id, formData)
+        const faunaPayload = {
+          name: formData.name,
+          scientific_name: formData.scientific_name,
+          type: formData.type,
+          difficulty: formData.difficulty,
+          water_temp: formData.water_temp,
+          ph_range: formData.ph_range,
+          tank_size: formData.tank_size,
+          compatibility: formData.compatibility,
+          description: formData.description,
+          care_tips: formData.care_tips,
+          image_url: formData.image_url,
+        }
+        updated = await faunaService.updateFauna(item.id, faunaPayload)
       }
       onSaveSuccess(updated || { ...item, ...formData })
       onClose()
     } catch (err) {
-      setError(err.message || 'Gagal menyimpan perubahan data')
+      setError(err?.response?.data?.error || err.message || 'Gagal menyimpan perubahan data')
     } finally {
       setLoading(false)
     }

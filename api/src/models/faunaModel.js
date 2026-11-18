@@ -30,9 +30,29 @@ export const FaunaModel = {
   },
 
   async update(id, payload) {
+    const allowed = [
+      "name",
+      "scientific_name",
+      "type",
+      "difficulty",
+      "water_temp",
+      "ph_range",
+      "tank_size",
+      "compatibility",
+      "description",
+      "care_tips",
+      "image_url",
+    ];
+    const cleanPayload = {};
+    for (const key of allowed) {
+      if (payload[key] !== undefined) {
+        cleanPayload[key] = payload[key];
+      }
+    }
+
     const { data, error } = await supabase
       .from("fauna")
-      .update(payload)
+      .update(cleanPayload)
       .eq("id", id)
       .select()
       .single();
