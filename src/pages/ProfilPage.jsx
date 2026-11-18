@@ -192,8 +192,8 @@ export default function ProfilPage({ wishlistCount, user, onUpdateUser, onLogout
                 />
               </div>
 
-              {/* Ikon Edit Foto di samping lingkaran foto profil (aktif saat mode edit) */}
-              {isEditing ? (
+              {/* Ikon Edit Foto di samping lingkaran foto profil (HANYA muncul saat mode edit aktif) */}
+              {isEditing && (
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
@@ -201,15 +201,6 @@ export default function ProfilPage({ wishlistCount, user, onUpdateUser, onLogout
                   title="Pilih foto profil baru"
                 >
                   <Icon name="edit" size={15} />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleStartEditing}
-                  className="absolute bottom-0 right-0 grid h-8 w-8 place-items-center rounded-full bg-white/80 text-[#0c2f27] shadow-md backdrop-blur-sm ring-2 ring-[#0c2f27] transition hover:bg-[#c9f05b] hover:scale-110 active:scale-95"
-                  title="Klik untuk mengedit foto profil"
-                >
-                  <Icon name="edit" size={14} />
                 </button>
               )}
             </div>
@@ -242,15 +233,8 @@ export default function ProfilPage({ wishlistCount, user, onUpdateUser, onLogout
       {/* Tampilan Data Profil (Jika tidak sedang edit) */}
       {!isEditing ? (
         <div className="rounded-[28px] border border-[#dfe6dc] bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-center justify-between border-b border-[#e7ece4] pb-3">
+          <div className="mb-4 border-b border-[#e7ece4] pb-3">
             <h3 className="text-sm font-bold text-[#315d4b]">Informasi Akun</h3>
-            <button
-              onClick={handleStartEditing}
-              className="flex items-center gap-1 text-xs font-bold text-[#2f6f53] hover:underline"
-            >
-              <Icon name="edit" size={13} />
-              <span>Ubah Data</span>
-            </button>
           </div>
 
           <div className="space-y-4 text-xs">
@@ -267,16 +251,8 @@ export default function ProfilPage({ wishlistCount, user, onUpdateUser, onLogout
       ) : (
         /* Form Edit Data Profil (Muncul saat tombol Edit diklik) */
         <form onSubmit={handleSave} className="rounded-[28px] border border-[#dfe6dc] bg-white p-6 shadow-sm animate-fade-in">
-          <div className="mb-5 flex items-center justify-between border-b border-[#e7ece4] pb-3">
+          <div className="mb-5 border-b border-[#e7ece4] pb-3">
             <h3 className="text-sm font-bold text-[#0c2f27]">Edit Data Profil</h3>
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-1.5 rounded-full bg-[#f0f5e9] px-3 py-1.5 text-xs font-bold text-[#2f6f53] transition hover:bg-[#e4edd9]"
-            >
-              <Icon name="edit" size={13} />
-              <span>Ganti Foto Profil</span>
-            </button>
           </div>
 
           {/* Username Input */}
