@@ -3,7 +3,8 @@ import { WishlistModel } from "../models/wishlistModel.js";
 export const WishlistController = {
   async getAll(req, res) {
     try {
-      const items = await WishlistModel.getAll();
+      const userId = req.query.userId || req.query.user_id;
+      const items = await WishlistModel.getAll(userId);
       res.json(items);
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -30,7 +31,8 @@ export const WishlistController = {
 
   async remove(req, res) {
     try {
-      await WishlistModel.remove(req.params.id);
+      const userId = req.query.userId || req.query.user_id || req.body?.user_id;
+      await WishlistModel.remove(req.params.id, userId);
       res.json({ message: "Wishlist item removed successfully" });
     } catch (err) {
       res.status(400).json({ error: err.message });

@@ -17,7 +17,7 @@ function App() {
   const [currentUser, setCurrentUser] = useState(() => userService.getCurrentUser())
   const [activeTab, setActiveTab] = useState('beranda')
   const [unreadCount, setUnreadCount] = useState(0)
-  const { wishlist, addItem, removeItem, refresh } = useWishlist()
+  const { wishlist, addItem, removeItem, refresh } = useWishlist(currentUser)
 
   // Listener untuk menangkap event sebelum instalasi PWA di level global
   useEffect(() => {
@@ -65,10 +65,12 @@ function App() {
       await removeItem(existing?.id, itemId)
     } else {
       await addItem({
+        user_id: currentUser?.id,
         item_id: itemId,
         item_type: itemType,
         item_name: item.name,
         item_image: item.image_url || '',
+        notes: item.difficulty ? `Kesulitan: ${item.difficulty}` : '',
         item_data: item,
       })
       if (activeTab !== 'wishlist') {
