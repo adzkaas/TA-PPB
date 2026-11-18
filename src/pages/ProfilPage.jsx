@@ -209,6 +209,18 @@ export default function ProfilPage({ wishlistCount, user, onUpdateUser, onLogout
             <div className="flex-1">
               <h2 className="text-2xl font-bold tracking-tight">{username}</h2>
               <p className="mt-1 text-xs text-white/70">{email}</p>
+              <div className="mt-2 flex items-center gap-2">
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold tracking-wide shadow-sm ${
+                    user?.role === 'admin'
+                      ? 'bg-[#c9f05b] text-[#0c2f27]'
+                      : 'bg-white/15 text-white/90'
+                  }`}
+                >
+                  <Icon name={user?.role === 'admin' ? 'check' : 'user'} size={12} strokeWidth={2.5} />
+                  <span>{user?.role === 'admin' ? 'Administrator' : 'Pengguna'}</span>
+                </span>
+              </div>
               {isEditing && selectedFile && (
                 <p className="mt-2 inline-block rounded-full bg-[#c9f05b]/20 px-3 py-1 text-[11px] font-bold text-[#c9f05b]">
                   ✓ Foto baru siap diupload
@@ -246,6 +258,20 @@ export default function ProfilPage({ wishlistCount, user, onUpdateUser, onLogout
             <div>
               <span className="block font-semibold text-[#70827a]">Alamat Email</span>
               <span className="mt-1 block text-sm font-bold text-[#17352b]">{email}</span>
+            </div>
+            <div>
+              <span className="block font-semibold text-[#70827a]">Peran Akun</span>
+              <span className="mt-1 flex items-center gap-2 text-sm font-bold text-[#17352b]">
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                    user?.role === 'admin'
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-[#e8f1df] text-[#315d4b]'
+                  }`}
+                >
+                  {user?.role === 'admin' ? '🛡️ Administrator (Hak Akses Edit & Kelola Katalog)' : '👤 Pengguna (Katalog & Wishlist)'}
+                </span>
+              </span>
             </div>
           </div>
         </div>

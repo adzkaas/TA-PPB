@@ -114,24 +114,36 @@ export default function Header({ activeTab, onTab, unreadCount = 0, user = null 
           {/* 3. Tombol Profil */}
           <button
             onClick={() => onTab('profil')}
-            className={`relative grid h-10 w-10 place-items-center overflow-hidden rounded-full border transition-colors ${
+            className={`relative grid h-10 w-10 place-items-center rounded-full border transition-colors ${
               activeTab === 'profil'
                 ? 'border-[#c9f05b] bg-[#c9f05b]/10 text-[#c9f05b]'
                 : 'border-white/15 text-white/80 hover:bg-white/10 hover:text-white'
             }`}
-            title={`Buka Profil (${user?.username || 'Pengguna'})`}
+            title={`Buka Profil (${user?.username || 'Pengguna'}${user?.role === 'admin' ? ' - Admin' : ''})`}
           >
-            {user?.avatar_url ? (
-              <img
-                src={user.avatar_url}
-                alt={user.username}
-                className="h-full w-full object-cover"
-                onError={(e) => {
-                  e.target.style.display = 'none'
-                }}
-              />
-            ) : (
-              <Icon name="user" size={19} />
+            <div className="h-full w-full overflow-hidden rounded-full">
+              {user?.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.username}
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    e.target.style.display = 'none'
+                  }}
+                />
+              ) : (
+                <div className="grid h-full w-full place-items-center">
+                  <Icon name="user" size={19} />
+                </div>
+              )}
+            </div>
+            {user?.role === 'admin' && (
+              <span
+                className="absolute -bottom-0.5 -right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-[#c9f05b] text-[8px] font-black text-[#0c2f27] ring-1 ring-[#0c2f27]"
+                title="Akun Administrator"
+              >
+                ★
+              </span>
             )}
           </button>
         </div>
