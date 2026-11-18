@@ -66,26 +66,13 @@ export default function LoginPage({ onLoginSuccess }) {
 
         {/* Main Login / Register Card */}
         <div className="overflow-hidden rounded-3xl border border-white/10 bg-[#0d2a23]/90 p-6 shadow-2xl backdrop-blur-xl">
-          {/* Tab Selector */}
-          <div className="mb-6 flex rounded-xl bg-[#081b16] p-1">
-            <button
-              type="button"
-              onClick={() => { setIsRegister(false); setError('') }}
-              className={`flex-1 rounded-lg py-2 text-xs font-bold transition-all ${
-                !isRegister ? 'bg-[#c9f05b] text-[#0c2f27] shadow' : 'text-white/60 hover:text-white'
-              }`}
-            >
-              Masuk
-            </button>
-            <button
-              type="button"
-              onClick={() => { setIsRegister(true); setError('') }}
-              className={`flex-1 rounded-lg py-2 text-xs font-bold transition-all ${
-                isRegister ? 'bg-[#c9f05b] text-[#0c2f27] shadow' : 'text-white/60 hover:text-white'
-              }`}
-            >
-              Daftar Baru
-            </button>
+          <div className="mb-5 text-center">
+            <h2 className="text-lg font-bold text-white">
+              {isRegister ? 'Buat Akun Baru' : 'Masuk ke Akun'}
+            </h2>
+            <p className="mt-0.5 text-xs text-white/60">
+              {isRegister ? 'Lengkapi data untuk mendaftar sebagai pengguna' : 'Masukkan email dan password Anda'}
+            </p>
           </div>
 
           {/* Error Message */}
@@ -156,6 +143,33 @@ export default function LoginPage({ onLoginSuccess }) {
               )}
             </button>
           </form>
+
+          {/* Hyperlink Switcher di bawah tombol */}
+          <div className="mt-5 text-center">
+            {isRegister ? (
+              <p className="text-xs text-white/70">
+                Sudah punya akun?{' '}
+                <button
+                  type="button"
+                  onClick={() => { setIsRegister(false); setError('') }}
+                  className="font-semibold text-[#c9f05b] underline decoration-[#c9f05b]/40 underline-offset-4 transition hover:text-[#d9fa6f] hover:decoration-[#c9f05b]"
+                >
+                  Masuk di sini
+                </button>
+              </p>
+            ) : (
+              <p className="text-xs text-white/70">
+                Belum punya akun?{' '}
+                <button
+                  type="button"
+                  onClick={() => { setIsRegister(true); setError('') }}
+                  className="font-semibold text-[#c9f05b] underline decoration-[#c9f05b]/40 underline-offset-4 transition hover:text-[#d9fa6f] hover:decoration-[#c9f05b]"
+                >
+                  Daftar sekarang
+                </button>
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Footer info */}

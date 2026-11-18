@@ -99,9 +99,6 @@ export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveS
               <h2 className="text-base font-bold text-[#0c2f27]">
                 Edit {itemType}: {item.name}
               </h2>
-              <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#0c2f27] bg-[#c9f05b] px-2.5 py-0.5 rounded-full shadow-sm">
-                🛡️ Mode Admin
-              </span>
             </div>
           </div>
           <button

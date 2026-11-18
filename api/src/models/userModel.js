@@ -49,24 +49,34 @@ export const UserModel = {
     return data;
   },
 
-  async update(id, payload) {
+  async update(idOrEmail, payload) {
     const updateData = {};
     if (payload.username !== undefined) updateData.username = payload.username;
     if (payload.email !== undefined) updateData.email = payload.email;
     if (payload.avatar_url !== undefined) updateData.avatar_url = payload.avatar_url;
     if (payload.role !== undefined) updateData.role = payload.role;
 
-    const { data, error } = await supabase
-      .from("users")
-      .update(updateData)
-      .eq("id", id)
+    // Cek apakah idOrEmail adalah UUID valid
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(idOrEmail));
+
+    let query = supabase.from("users").update(updateData);
+    if (isUUID) {
+      query = query.eq("id", idOrEmail);
+    } else if (payload.email) {
+      query = query.eq("email", payload.email);
+    } else {
+      query = query.eq("email", idOrEmail);
+    }
+
+    const { data, error } = await query
       .select("id, username, email, avatar_url, role, created_at")
-      .single();
+      .maybeSingle();
+
     if (error) throw error;
-    return data;
+    return data || { id: idOrEmail, ...updateData };
   },
 
-  async uploadAvatar(id, base64Data, mimeType = "image/jpeg") {
+  async uploadAvatar(idOrEmail, base64Data, mimeType = "image/jpeg", email = null) {
     // Pastikan bucket 'avatars' sudah ada
     try {
       await supabase.storage.createBucket("avatars", { public: true });
@@ -82,7 +92,8 @@ export const UserModel = {
     else if (mimeType.includes("webp")) ext = "webp";
     else if (mimeType.includes("gif")) ext = "gif";
 
-    const fileName = `user_${id}_${Date.now()}.${ext}`;
+    const cleanSafeId = String(idOrEmail).replace(/[^a-zA-Z0-9_-]/g, "_");
+    const fileName = `user_${cleanSafeId}_${Date.now()}.${ext}`;
 
     const { error: uploadError } = await supabase.storage
       .from("avatars")
@@ -99,7 +110,11 @@ export const UserModel = {
 
     const publicUrl = urlData.publicUrl;
 
-    const updatedUser = await this.update(id, { avatar_url: publicUrl });
+    const updatedUser = await this.update(idOrEmail, {
+      avatar_url: publicUrl,
+      ...(email ? { email } : {}),
+    });
+
     return { publicUrl, user: updatedUser };
   },
 };

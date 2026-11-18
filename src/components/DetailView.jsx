@@ -58,11 +58,6 @@ export default function DetailView({
           <span className="inline-block rounded-full bg-[#c9f05b] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#14352b]">
             {itemType} · {item.type}
           </span>
-          {isAdmin && (
-            <span className="rounded-full bg-[#c9f05b] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#0c2f27] shadow-sm">
-              🛡️ Admin Mode
-            </span>
-          )}
         </div>
       </div>
 

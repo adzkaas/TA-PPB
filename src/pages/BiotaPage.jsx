@@ -126,11 +126,6 @@ export default function BiotaPage({ wishlist, onWishlistToggle, user }) {
           <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#4b8268]">
             Koleksi biota
           </p>
-          {isAdmin && (
-            <span className="rounded-full bg-[#c9f05b] px-3.5 py-1 text-[11px] font-bold text-[#0c2f27] shadow-sm">
-              🛡️ Mode Admin Aktif
-            </span>
-          )}
         </div>
         <h1 className="text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
           Biota Akuarium
