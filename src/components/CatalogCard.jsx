@@ -3,10 +3,21 @@ import wishlistService from '../services/wishlistService'
 
 // CatalogCard — kartu katalog untuk tanaman & biota
 // Mengikuti desain dari Desain Katalog AquascapeHub
-export default function CatalogCard({ item, itemType, onSelect, wishlist, onWishlistToggle }) {
-  const isSaved = wishlist ? wishlist.some(
-    (w) => w.item_id === String(item.id) && w.item_type === itemType
-  ) : wishlistService.isInWishlist(String(item.id), itemType)
+export default function CatalogCard({
+  item,
+  itemType,
+  onSelect,
+  wishlist,
+  onWishlistToggle,
+  isAdmin = false,
+  onEdit,
+  onDelete,
+}) {
+  const isSaved = wishlist
+    ? wishlist.some(
+        (w) => w.item_id === String(item.id) && w.item_type === itemType,
+      )
+    : wishlistService.isInWishlist(String(item.id), itemType)
 
   const difficultyColor = {
     'Mudah': 'text-emerald-600 bg-emerald-50',
@@ -16,7 +27,7 @@ export default function CatalogCard({ item, itemType, onSelect, wishlist, onWish
 
   return (
     <article
-      className="catalog-card group overflow-hidden rounded-[24px] border border-[#dfe6dc] bg-white cursor-pointer"
+      className="catalog-card group overflow-hidden rounded-[24px] border border-[#dfe6dc] bg-white cursor-pointer transition-all hover:shadow-lg"
       onClick={() => onSelect(item)}
     >
       {/* Image */}
@@ -33,21 +44,58 @@ export default function CatalogCard({ item, itemType, onSelect, wishlist, onWish
         <span className="absolute left-4 top-4 rounded-full bg-[#0d3028]/80 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white backdrop-blur-sm">
           {item.type || itemType}
         </span>
-        {/* Wishlist button */}
-        <button
-          aria-label={isSaved ? `Hapus ${item.name} dari Wishlist` : `Simpan ${item.name} ke Wishlist`}
-          onClick={(e) => {
-            e.stopPropagation()
-            onWishlistToggle(item, itemType)
-          }}
-          className={`absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full backdrop-blur-md transition-transform hover:scale-105 ${
-            isSaved ? 'bg-[#c9f05b] text-[#17352b]' : 'bg-white/85 text-[#49665a]'
-          }`}
-        >
-          <span className={isSaved ? 'fill-heart' : ''}>
-            <Icon name="heart" size={18} />
-          </span>
-        </button>
+
+        {/* Action buttons (Admin Edit/Delete di samping tombol Wishlist) */}
+        <div className="absolute right-4 top-4 flex items-center gap-1.5">
+          {isAdmin && (
+            <>
+              {/* Tombol Edit Admin */}
+              <button
+                type="button"
+                title={`Edit data ${item.name}`}
+                aria-label={`Edit ${item.name}`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (onEdit) onEdit(item, itemType)
+                }}
+                className="grid h-10 w-10 place-items-center rounded-full bg-white/90 text-amber-700 backdrop-blur-md shadow-md transition-transform hover:scale-110 hover:bg-amber-50 active:scale-95"
+              >
+                <Icon name="edit" size={17} />
+              </button>
+
+              {/* Tombol Hapus Admin */}
+              <button
+                type="button"
+                title={`Hapus ${item.name}`}
+                aria-label={`Hapus ${item.name}`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (onDelete) onDelete(item, itemType)
+                }}
+                className="grid h-10 w-10 place-items-center rounded-full bg-white/90 text-rose-600 backdrop-blur-md shadow-md transition-transform hover:scale-110 hover:bg-rose-50 active:scale-95"
+              >
+                <Icon name="trash" size={17} />
+              </button>
+            </>
+          )}
+
+          {/* Tombol Wishlist */}
+          <button
+            type="button"
+            aria-label={isSaved ? `Hapus ${item.name} dari Wishlist` : `Simpan ${item.name} ke Wishlist`}
+            onClick={(e) => {
+              e.stopPropagation()
+              onWishlistToggle(item, itemType)
+            }}
+            className={`grid h-10 w-10 place-items-center rounded-full backdrop-blur-md shadow-md transition-transform hover:scale-105 active:scale-95 ${
+              isSaved ? 'bg-[#c9f05b] text-[#17352b]' : 'bg-white/85 text-[#49665a]'
+            }`}
+          >
+            <span className={isSaved ? 'fill-heart' : ''}>
+              <Icon name="heart" size={18} />
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Content */}

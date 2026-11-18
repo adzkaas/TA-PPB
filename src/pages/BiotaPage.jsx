@@ -2,15 +2,23 @@ import { useMemo, useState } from 'react'
 import { Icon } from '../components/Icon'
 import CatalogCard from '../components/CatalogCard'
 import DetailView from '../components/DetailView'
+import ItemEditModal from '../components/ItemEditModal'
 import { useFauna } from '../hooks/useFauna'
+import faunaService from '../services/faunaService'
 
 // Halaman Biota — Halaman utama katalog biota/fauna akuarium
-// Memiliki list + detail sesuai persyaratan TA
-export default function BiotaPage({ wishlist, onWishlistToggle }) {
+export default function BiotaPage({ wishlist, onWishlistToggle, user }) {
   const { fauna, loading, error, refetch } = useFauna()
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('Semua')
   const [selectedItem, setSelectedItem] = useState(null)
+
+  // State untuk modal edit item
+  const [editingItem, setEditingItem] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [notification, setNotification] = useState('')
+
+  const isAdmin = user?.role === 'admin'
 
   const types = useMemo(() => {
     const unique = [...new Set(fauna.map((f) => f.type).filter(Boolean))]
@@ -27,29 +35,84 @@ export default function BiotaPage({ wishlist, onWishlistToggle }) {
     })
   }, [fauna, search, filter])
 
+  const handleEdit = (item) => {
+    setEditingItem(item)
+    setIsModalOpen(true)
+  }
+
+  const handleDelete = async (item) => {
+    const confirmDelete = window.confirm(
+      `Apakah Anda yakin ingin menghapus data biota "${item.name}"?`,
+    )
+    if (!confirmDelete) return
+
+    try {
+      await faunaService.deleteFauna(item.id)
+      setNotification(`Biota "${item.name}" berhasil dihapus.`)
+      setTimeout(() => setNotification(''), 3000)
+      if (selectedItem?.id === item.id) {
+        setSelectedItem(null)
+      }
+      refetch()
+    } catch (err) {
+      alert(`Gagal menghapus biota: ${err.message}`)
+    }
+  }
+
+  const handleSaveSuccess = (updatedItem) => {
+    setNotification(`Data biota "${updatedItem.name}" berhasil diperbarui.`)
+    setTimeout(() => setNotification(''), 3000)
+    if (selectedItem?.id === updatedItem.id) {
+      setSelectedItem(updatedItem)
+    }
+    refetch()
+  }
+
   // Halaman detail
   if (selectedItem) {
     const isSaved = wishlist.some(
-      (w) => w.item_id === String(selectedItem.id) && w.item_type === 'Biota'
+      (w) => w.item_id === String(selectedItem.id) && w.item_type === 'Biota',
     )
     return (
-      <DetailView
-        item={selectedItem}
-        itemType="Biota"
-        onBack={() => setSelectedItem(null)}
-        onWishlistToggle={onWishlistToggle}
-        isSaved={isSaved}
-      />
+      <>
+        <DetailView
+          item={selectedItem}
+          itemType="Biota"
+          onBack={() => setSelectedItem(null)}
+          onWishlistToggle={onWishlistToggle}
+          isSaved={isSaved}
+          isAdmin={isAdmin}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+        <ItemEditModal
+          isOpen={isModalOpen}
+          item={editingItem}
+          itemType="Biota"
+          onClose={() => {
+            setIsModalOpen(false)
+            setEditingItem(null)
+          }}
+          onSaveSuccess={handleSaveSuccess}
+        />
+      </>
     )
   }
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-10 pb-28 md:px-8">
-      {/* Header seksi */}
+      {/* Header */}
       <div className="mb-8">
-        <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#4b8268]">
-          Koleksi biota
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#4b8268]">
+            Koleksi biota
+          </p>
+          {isAdmin && (
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-[11px] font-bold text-amber-800 border border-amber-300">
+              🛡️ Mode Admin Aktif
+            </span>
+          )}
+        </div>
         <h1 className="text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
           Biota Akuarium
         </h1>
@@ -57,6 +120,14 @@ export default function BiotaPage({ wishlist, onWishlistToggle }) {
           Pilih ikan, udang, dan siput yang cocok untuk ekosistem aquascape kamu.
         </p>
       </div>
+
+      {/* Notification Toast */}
+      {notification && (
+        <div className="mb-6 flex items-center gap-2 rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-xs font-bold text-emerald-800 shadow-sm">
+          <Icon name="check" size={16} />
+          <span>{notification}</span>
+        </div>
+      )}
 
       {/* Search bar */}
       <label className="mb-5 flex h-12 w-full items-center gap-3 rounded-full border border-[#d9e2d6] bg-white px-5 text-[#6d8077] shadow-sm focus-within:shadow-[0_0_0_4px_rgba(81,130,103,0.1)] transition-shadow">
@@ -123,11 +194,26 @@ export default function BiotaPage({ wishlist, onWishlistToggle }) {
                 onSelect={setSelectedItem}
                 wishlist={wishlist}
                 onWishlistToggle={onWishlistToggle}
+                isAdmin={isAdmin}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
               />
             ))}
           </div>
         </>
       )}
+
+      {/* Modal Edit Item (Admin) */}
+      <ItemEditModal
+        isOpen={isModalOpen}
+        item={editingItem}
+        itemType="Biota"
+        onClose={() => {
+          setIsModalOpen(false)
+          setEditingItem(null)
+        }}
+        onSaveSuccess={handleSaveSuccess}
+      />
     </div>
   )
 }

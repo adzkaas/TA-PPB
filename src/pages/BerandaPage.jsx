@@ -147,9 +147,6 @@ export default function BerandaPage({ onNavigate, wishlistCount }) {
               <span className="absolute left-4 top-4 rounded-full bg-[#0d3028]/85 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white backdrop-blur-sm">
                 Tanaman · {currentPlant.type || 'Aquascape'}
               </span>
-              <span className="absolute right-4 top-4 rounded-full bg-[#c9f05b] px-2.5 py-1 text-[9px] font-bold text-[#14352b] shadow-sm">
-                Berputar 2s
-              </span>
             </div>
             <div className="p-5">
               <p className="text-[11px] font-medium italic text-[#809087]">
@@ -185,9 +182,6 @@ export default function BerandaPage({ onNavigate, wishlistCount }) {
               />
               <span className="absolute left-4 top-4 rounded-full bg-[#0d3028]/85 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white backdrop-blur-sm">
                 Biota · {currentFauna.type || 'Aquarium'}
-              </span>
-              <span className="absolute right-4 top-4 rounded-full bg-[#c9f05b] px-2.5 py-1 text-[9px] font-bold text-[#14352b] shadow-sm">
-                Berputar 2s
               </span>
             </div>
             <div className="p-5">

@@ -8,10 +8,13 @@ import TanamanPage from './pages/TanamanPage'
 import BiotaPage from './pages/BiotaPage'
 import WishlistPage from './pages/WishlistPage'
 import ProfilPage from './pages/ProfilPage'
+import LoginPage from './pages/LoginPage'
 import { useWishlist } from './hooks/useWishlist'
+import userService from './services/userService'
 
 function App() {
   const [showSplash, setShowSplash] = useState(true)
+  const [currentUser, setCurrentUser] = useState(() => userService.getCurrentUser())
   const [activeTab, setActiveTab] = useState('beranda')
   const [unreadCount, setUnreadCount] = useState(0)
   const { wishlist, addItem, removeItem, refresh } = useWishlist()
@@ -41,7 +44,7 @@ function App() {
   // Navigasi tab — dipakai dari BottomNav, Header, dan halaman internal
   const handleTabChange = (tab) => {
     setActiveTab(tab)
-    // Jika tab 'wishlist' (Tank Saya) dibuka, bersihkan notifikasi unread!
+    // Jika tab 'wishlist' dibuka, bersihkan notifikasi unread
     if (tab === 'wishlist') {
       setUnreadCount(0)
     }
@@ -68,25 +71,45 @@ function App() {
         item_image: item.image_url || '',
         item_data: item,
       })
-      // Tambahkan notifikasi jika pengguna saat ini TIDAK sedang berada di tab Tank Saya
       if (activeTab !== 'wishlist') {
         setUnreadCount((prev) => prev + 1)
       }
     }
   }
 
+  const handleLoginSuccess = (user) => {
+    setCurrentUser(user)
+  }
+
+  const handleLogout = () => {
+    userService.logout()
+    setCurrentUser(null)
+    setActiveTab('beranda')
+  }
+
+  const handleUpdateUser = (updated) => {
+    setCurrentUser(updated)
+  }
+
+  // 1. Splash Screen ditampilkan pertama kali
+  if (showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />
+  }
+
+  // 2. Halaman Login ditampilkan setelah splash screen jika belum login
+  if (!currentUser) {
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />
+  }
+
+  // 3. Aplikasi Utama
   return (
     <div className="min-h-screen bg-[#f3f6ef]">
-      {/* Splash Screen */}
-      {showSplash && (
-        <SplashScreen onFinish={() => setShowSplash(false)} />
-      )}
-
-      {/* Header (sticky top) dengan tombol Install di sebelah kiri Tank Saya */}
+      {/* Header (sticky top) */}
       <Header
         activeTab={activeTab}
         onTab={handleTabChange}
         unreadCount={unreadCount}
+        user={currentUser}
       />
 
       {/* Main Content */}
@@ -95,18 +118,21 @@ function App() {
           <BerandaPage
             onNavigate={handleTabChange}
             wishlistCount={wishlist.length}
+            user={currentUser}
           />
         )}
         {activeTab === 'tanaman' && (
           <TanamanPage
             wishlist={wishlist}
             onWishlistToggle={handleWishlistToggle}
+            user={currentUser}
           />
         )}
         {activeTab === 'biota' && (
           <BiotaPage
             wishlist={wishlist}
             onWishlistToggle={handleWishlistToggle}
+            user={currentUser}
           />
         )}
         {activeTab === 'wishlist' && (
@@ -118,7 +144,12 @@ function App() {
           />
         )}
         {activeTab === 'profil' && (
-          <ProfilPage wishlistCount={wishlist.length} />
+          <ProfilPage
+            wishlistCount={wishlist.length}
+            user={currentUser}
+            onUpdateUser={handleUpdateUser}
+            onLogout={handleLogout}
+          />
         )}
       </main>
 
@@ -129,7 +160,7 @@ function App() {
         unreadCount={unreadCount}
       />
 
-      {/* PWA install prompt banner (seperti di PWA2) */}
+      {/* PWA install prompt banner */}
       <PWABadge />
     </div>
   )

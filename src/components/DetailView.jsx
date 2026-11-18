@@ -1,7 +1,16 @@
 import { Icon } from './Icon'
 
 // Detail view untuk tanaman atau biota — ditampilkan saat item diklik
-export default function DetailView({ item, itemType, onBack, onWishlistToggle, isSaved }) {
+export default function DetailView({
+  item,
+  itemType,
+  onBack,
+  onWishlistToggle,
+  isSaved,
+  isAdmin = false,
+  onEdit,
+  onDelete,
+}) {
   if (!item) return null
 
   const stats =
@@ -45,10 +54,15 @@ export default function DetailView({ item, itemType, onBack, onWishlistToggle, i
         </button>
 
         {/* Category badge on image */}
-        <div className="absolute bottom-5 left-5 right-5">
+        <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between">
           <span className="inline-block rounded-full bg-[#c9f05b] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[#14352b]">
             {itemType} · {item.type}
           </span>
+          {isAdmin && (
+            <span className="rounded-full bg-amber-400 px-2.5 py-0.5 text-[10px] font-bold text-amber-950">
+              Admin Mode
+            </span>
+          )}
         </div>
       </div>
 
@@ -97,10 +111,30 @@ export default function DetailView({ item, itemType, onBack, onWishlistToggle, i
           </div>
         )}
 
+        {/* Admin Quick Action Bar */}
+        {isAdmin && (
+          <div className="mt-6 flex items-center gap-3">
+            <button
+              onClick={() => onEdit && onEdit(item, itemType)}
+              className="flex flex-1 h-12 items-center justify-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 px-4 text-xs font-bold text-amber-800 transition hover:bg-amber-100"
+            >
+              <Icon name="edit" size={16} />
+              Edit Data
+            </button>
+            <button
+              onClick={() => onDelete && onDelete(item, itemType)}
+              className="flex flex-1 h-12 items-center justify-center gap-2 rounded-2xl border border-rose-300 bg-rose-50 px-4 text-xs font-bold text-rose-700 transition hover:bg-rose-100"
+            >
+              <Icon name="trash" size={16} />
+              Hapus Item
+            </button>
+          </div>
+        )}
+
         {/* Wishlist CTA */}
         <button
           onClick={() => onWishlistToggle(item, itemType)}
-          className={`mt-8 flex h-14 w-full items-center justify-center gap-3 rounded-full text-sm font-bold transition-all ${
+          className={`mt-4 flex h-14 w-full items-center justify-center gap-3 rounded-full text-sm font-bold transition-all ${
             isSaved
               ? 'border-2 border-[#173f34] bg-transparent text-[#173f34]'
               : 'bg-[#173f34] text-white hover:bg-[#1f5040]'

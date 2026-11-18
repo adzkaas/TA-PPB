@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Icon } from './Icon'
 
 // Header aplikasi — sticky top bar dengan branding AquascapeHub
-export default function Header({ activeTab, onTab, unreadCount = 0 }) {
+export default function Header({ activeTab, onTab, unreadCount = 0, user = null }) {
   const [installed, setInstalled] = useState(false)
 
   useEffect(() => {
@@ -114,14 +114,25 @@ export default function Header({ activeTab, onTab, unreadCount = 0 }) {
           {/* 3. Tombol Profil */}
           <button
             onClick={() => onTab('profil')}
-            className={`grid h-10 w-10 place-items-center rounded-full border transition-colors ${
+            className={`relative grid h-10 w-10 place-items-center overflow-hidden rounded-full border transition-colors ${
               activeTab === 'profil'
                 ? 'border-[#c9f05b] bg-[#c9f05b]/10 text-[#c9f05b]'
                 : 'border-white/15 text-white/80 hover:bg-white/10 hover:text-white'
             }`}
-            title="Buka Profil"
+            title={`Buka Profil (${user?.username || 'Pengguna'})`}
           >
-            <Icon name="user" size={19} />
+            {user?.avatar_url ? (
+              <img
+                src={user.avatar_url}
+                alt={user.username}
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  e.target.style.display = 'none'
+                }}
+              />
+            ) : (
+              <Icon name="user" size={19} />
+            )}
           </button>
         </div>
       </div>
