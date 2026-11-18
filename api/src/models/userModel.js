@@ -65,4 +65,41 @@ export const UserModel = {
     if (error) throw error;
     return data;
   },
+
+  async uploadAvatar(id, base64Data, mimeType = "image/jpeg") {
+    // Pastikan bucket 'avatars' sudah ada
+    try {
+      await supabase.storage.createBucket("avatars", { public: true });
+    } catch (e) {
+      // Bucket sudah ada
+    }
+
+    const base64Clean = base64Data.replace(/^data:image\/\w+;base64,/, "");
+    const buffer = Buffer.from(base64Clean, "base64");
+
+    let ext = "jpg";
+    if (mimeType.includes("png")) ext = "png";
+    else if (mimeType.includes("webp")) ext = "webp";
+    else if (mimeType.includes("gif")) ext = "gif";
+
+    const fileName = `user_${id}_${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(fileName, buffer, {
+        contentType: mimeType,
+        upsert: true,
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data: urlData } = supabase.storage
+      .from("avatars")
+      .getPublicUrl(fileName);
+
+    const publicUrl = urlData.publicUrl;
+
+    const updatedUser = await this.update(id, { avatar_url: publicUrl });
+    return { publicUrl, user: updatedUser };
+  },
 };

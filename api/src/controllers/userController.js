@@ -56,4 +56,17 @@ export const UserController = {
       res.status(400).json({ error: err.message });
     }
   },
+
+  async uploadAvatar(req, res) {
+    try {
+      const { imageBase64, mimeType } = req.body;
+      if (!imageBase64) {
+        return res.status(400).json({ error: "Data gambar (imageBase64) wajib disertakan" });
+      }
+      const result = await UserModel.uploadAvatar(req.params.id, imageBase64, mimeType);
+      res.json({ message: "Foto profil berhasil diupload ke Supabase", ...result });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  },
 };

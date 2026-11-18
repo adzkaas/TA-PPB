@@ -1,28 +1,14 @@
 import { useState } from 'react'
 import { Icon } from '../components/Icon'
-import userService, { DEMO_ACCOUNTS } from '../services/userService'
+import userService from '../services/userService'
 
 export default function LoginPage({ onLoginSuccess }) {
   const [isRegister, setIsRegister] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [username, setUsername] = useState('')
-  const [role, setRole] = useState('pengguna')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
-  const handleQuickLogin = async (account) => {
-    setError('')
-    setLoading(true)
-    try {
-      const user = await userService.login(account.email, account.password)
-      onLoginSuccess(user)
-    } catch (err) {
-      setError(err.message || 'Gagal masuk akun')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -34,11 +20,12 @@ export default function LoginPage({ onLoginSuccess }) {
         if (!username.trim() || !email.trim() || !password.trim()) {
           throw new Error('Semua kolom wajib diisi')
         }
+        // Daftar akun baru HANYA sebagai user (pengguna)
         const user = await userService.register({
           username: username.trim(),
           email: email.trim(),
           password,
-          role,
+          role: 'pengguna',
         })
         onLoginSuccess(user)
       } else {
@@ -73,39 +60,9 @@ export default function LoginPage({ onLoginSuccess }) {
             Aquascape<span className="text-[#c9f05b]">Hub</span>
           </h1>
           <p className="mt-1 text-xs text-white/60">
-            {isRegister ? 'Buat akun baru untuk mulai menjelajah' : 'Silakan masuk untuk melanjutkan'}
+            {isRegister ? 'Buat akun pengguna baru untuk mulai menjelajah' : 'Silakan masuk ke akun Anda'}
           </p>
         </div>
-
-        {/* Demo Fast Login Buttons (Untuk Kemudahan Pengujian TA / Dosen) */}
-        {!isRegister && (
-          <div className="mb-5 rounded-2xl border border-white/10 bg-white/5 p-3.5 backdrop-blur-md">
-            <div className="mb-2.5 flex items-center justify-between text-[11px] font-semibold text-white/70">
-              <span>⚡ Akses Cepat Demo Akun:</span>
-              <span className="rounded bg-[#c9f05b]/20 px-1.5 py-0.5 text-[9px] text-[#c9f05b]">Praktikum PPB</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin(DEMO_ACCOUNTS[1])}
-                disabled={loading}
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/10 py-2.5 text-xs font-semibold text-white transition hover:bg-white/20 active:scale-95 disabled:opacity-50"
-              >
-                <span>🌿</span>
-                <span>Role Pengguna</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin(DEMO_ACCOUNTS[0])}
-                disabled={loading}
-                className="flex items-center justify-center gap-1.5 rounded-xl bg-[#c9f05b] py-2.5 text-xs font-bold text-[#0c2f27] shadow transition hover:bg-[#d6f578] active:scale-95 disabled:opacity-50"
-              >
-                <span>🛡️</span>
-                <span>Role Admin</span>
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Main Login / Register Card */}
         <div className="overflow-hidden rounded-3xl border border-white/10 bg-[#0d2a23]/90 p-6 shadow-2xl backdrop-blur-xl">
@@ -183,38 +140,6 @@ export default function LoginPage({ onLoginSuccess }) {
                 className="w-full rounded-xl border border-white/15 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder-white/30 outline-none transition focus:border-[#c9f05b] focus:ring-1 focus:ring-[#c9f05b]"
               />
             </div>
-
-            {isRegister && (
-              <div>
-                <label className="mb-1.5 block text-xs font-medium text-white/70">
-                  Pilih Role
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setRole('pengguna')}
-                    className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-semibold transition ${
-                      role === 'pengguna'
-                        ? 'border-[#c9f05b] bg-[#c9f05b]/20 text-[#c9f05b]'
-                        : 'border-white/15 bg-white/5 text-white/60 hover:text-white'
-                    }`}
-                  >
-                    <span>🌿 Pengguna</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRole('admin')}
-                    className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-semibold transition ${
-                      role === 'admin'
-                        ? 'border-[#c9f05b] bg-[#c9f05b]/20 text-[#c9f05b]'
-                        : 'border-white/15 bg-white/5 text-white/60 hover:text-white'
-                    }`}
-                  >
-                    <span>🛡️ Admin</span>
-                  </button>
-                </div>
-              </div>
-            )}
 
             <button
               type="submit"

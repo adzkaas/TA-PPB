@@ -54,5 +54,39 @@ SET
   username = EXCLUDED.username,
   avatar_url = EXCLUDED.avatar_url;
 
--- Cek apakah data sudah berhasil masuk
+-- =========================================================
+-- 5. SETUP SUPABASE STORAGE BUCKET: `avatars`
+-- =========================================================
+-- Buat bucket avatars dengan akses public = true
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+-- Berikan izin akses SELECT (read), INSERT (upload), UPDATE, DELETE ke storage.objects
+DROP POLICY IF EXISTS "Public read on avatars" ON storage.objects;
+CREATE POLICY "Public read on avatars"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'avatars');
+
+DROP POLICY IF EXISTS "Public insert on avatars" ON storage.objects;
+CREATE POLICY "Public insert on avatars"
+ON storage.objects FOR INSERT
+TO public
+WITH CHECK (bucket_id = 'avatars');
+
+DROP POLICY IF EXISTS "Public update on avatars" ON storage.objects;
+CREATE POLICY "Public update on avatars"
+ON storage.objects FOR UPDATE
+TO public
+USING (bucket_id = 'avatars');
+
+DROP POLICY IF EXISTS "Public delete on avatars" ON storage.objects;
+CREATE POLICY "Public delete on avatars"
+ON storage.objects FOR DELETE
+TO public
+USING (bucket_id = 'avatars');
+
+-- Cek apakah tabel dan bucket sudah aktif
 SELECT id, username, email, role, created_at FROM users;
+SELECT id, name, public FROM storage.buckets WHERE id = 'avatars';

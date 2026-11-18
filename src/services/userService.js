@@ -131,6 +131,38 @@ class UserService {
     return updatedUser
   }
 
+  async uploadAvatar(id, file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = async () => {
+        try {
+          const imageBase64 = reader.result
+          const res = await apiClient.post(`/api/users/${id}/avatar`, {
+            imageBase64,
+            mimeType: file.type || 'image/jpeg',
+          })
+          if (res && res.user) {
+            this.setCurrentUser(res.user)
+            resolve(res.user)
+          } else if (res && res.publicUrl) {
+            const updated = await this.updateProfile(id, { avatar_url: res.publicUrl })
+            resolve(updated)
+          } else {
+            resolve(res)
+          }
+        } catch (err) {
+          // Fallback lokal jika backend tidak terjangkau (simpan data URL base64)
+          console.warn('Backend storage upload error, saving base64 preview:', err.message)
+          const base64Url = reader.result
+          const updated = await this.updateProfile(id, { avatar_url: base64Url })
+          resolve(updated)
+        }
+      }
+      reader.onerror = (e) => reject(e)
+      reader.readAsDataURL(file)
+    })
+  }
+
   logout() {
     this.setCurrentUser(null)
   }

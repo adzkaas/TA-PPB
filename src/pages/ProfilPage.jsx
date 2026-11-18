@@ -1,34 +1,40 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Icon } from '../components/Icon'
 import userService from '../services/userService'
-
-const AVATAR_PRESETS = [
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
-  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80',
-  'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=300&q=80',
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
-]
 
 export default function ProfilPage({ wishlistCount, user, onUpdateUser, onLogout }) {
   const [username, setUsername] = useState(user?.username || 'Aquascaper')
   const [email, setEmail] = useState(user?.email || 'user@aquascapehub.com')
-  const [avatarUrl, setAvatarUrl] = useState(
-    user?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80'
-  )
-  const [bio, setBio] = useState(user?.bio || '')
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || '')
+  const [previewUrl, setPreviewUrl] = useState('')
+  const [selectedFile, setSelectedFile] = useState(null)
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     if (user) {
       setUsername(user.username || '')
       setEmail(user.email || '')
       setAvatarUrl(user.avatar_url || '')
-      setBio(user.bio || '')
     }
   }, [user])
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Ukuran file maksimal 5MB')
+        return
+      }
+      setSelectedFile(file)
+      const objectUrl = URL.createObjectURL(file)
+      setPreviewUrl(objectUrl)
+      setError('')
+    }
+  }
 
   const handleSave = async (e) => {
     e.preventDefault()
@@ -40,27 +46,42 @@ export default function ProfilPage({ wishlistCount, user, onUpdateUser, onLogout
         throw new Error('Nama pengguna dan email tidak boleh kosong')
       }
 
-      const updated = await userService.updateProfile(user?.id || 'demo-user', {
+      let updatedUserData = {
         username: username.trim(),
         email: email.trim(),
-        avatar_url: avatarUrl.trim(),
-        bio: bio.trim(),
-      })
+      }
+
+      // 1. Jika ada file foto yang dipilih, upload ke Supabase Storage Bucket 'avatars'
+      if (selectedFile) {
+        const uploadResult = await userService.uploadAvatar(user?.id || 'demo-user', selectedFile)
+        if (uploadResult?.avatar_url) {
+          updatedUserData.avatar_url = uploadResult.avatar_url
+          setAvatarUrl(uploadResult.avatar_url)
+        }
+      }
+
+      // 2. Update data username dan email
+      const updated = await userService.updateProfile(user?.id || 'demo-user', updatedUserData)
 
       if (onUpdateUser) {
         onUpdateUser(updated)
       }
 
+      setSelectedFile(null)
+      setPreviewUrl('')
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch (err) {
-      setError(err.message || 'Gagal menyimpan profil')
+      setError(err?.response?.data?.error || err.message || 'Gagal menyimpan profil')
     } finally {
       setLoading(false)
     }
   }
 
-  const isAdmin = user?.role === 'admin'
+  const currentDisplayAvatar =
+    previewUrl ||
+    avatarUrl ||
+    'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80'
 
   return (
     <div className="mx-auto max-w-2xl px-5 py-10 pb-28 md:px-8">
@@ -102,32 +123,59 @@ export default function ProfilPage({ wishlistCount, user, onUpdateUser, onLogout
       {/* Profile Card Summary */}
       <div className="mb-6 overflow-hidden rounded-[24px] border border-[#dfe6dc] bg-white shadow-sm">
         <div className="bg-[#0c2f27] p-6 text-white">
-          <div className="flex items-center gap-4">
-            <div className="relative h-18 w-18 overflow-hidden rounded-2xl border-2 border-[#c9f05b] bg-[#14352b]">
-              <img
-                src={avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80'}
-                alt={username}
-                className="h-full w-full object-cover"
-                onError={(e) => {
-                  e.target.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80'
-                }}
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold">{user?.username || username}</h2>
-                <span
-                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                    isAdmin
-                      ? 'bg-amber-400 text-amber-950'
-                      : 'bg-[#c9f05b] text-[#0c2f27]'
-                  }`}
-                >
-                  {isAdmin ? '🛡️ Admin' : '🌿 Pengguna'}
-                </span>
+          <div className="flex flex-col sm:flex-row items-center gap-5">
+            {/* Foto Profil dengan Tombol Ganti Foto Langsung */}
+            <div className="relative group">
+              <div className="relative h-20 w-20 overflow-hidden rounded-2xl border-2 border-[#c9f05b] bg-[#14352b] shadow-md">
+                <img
+                  src={currentDisplayAvatar}
+                  alt={username}
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    e.target.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80'
+                  }}
+                />
               </div>
+
+              {/* Tombol Upload Overlay */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                title="Ganti Foto Profil"
+              >
+                <Icon name="download" size={16} />
+                <span className="mt-1 text-[9px] font-bold">Ganti Foto</span>
+              </button>
+            </div>
+
+            <div className="text-center sm:text-left flex-1">
+              <h2 className="text-xl font-bold">{user?.username || username}</h2>
               <p className="mt-1 text-xs text-white/70">{user?.email || email}</p>
-              <p className="mt-0.5 text-[11px] text-white/40">ID: {user?.id || 'AQH-USER'}</p>
+
+              {/* Tombol Pilih Foto untuk Mobile / Kenyamanan User */}
+              <div className="mt-3">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#c9f05b] px-3.5 py-1.5 text-xs font-bold text-[#0c2f27] shadow transition hover:bg-[#d7f775] active:scale-95"
+                >
+                  <Icon name="download" size={14} />
+                  <span>Upload Foto Profil</span>
+                </button>
+                {selectedFile && (
+                  <span className="ml-2 text-[11px] text-[#c9f05b]">
+                    ✓ {selectedFile.name.slice(0, 18)}...
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -139,12 +187,8 @@ export default function ProfilPage({ wishlistCount, user, onUpdateUser, onLogout
             <div className="mt-1 text-xs text-[#70827a]">Item di Wishlist</div>
           </div>
           <div className="p-5 text-center">
-            <div className="text-2xl font-bold text-[#17352b]">
-              {isAdmin ? '🛡️ Full Akses' : '🌿 Penjelajah'}
-            </div>
-            <div className="mt-1 text-xs text-[#70827a]">
-              {isAdmin ? 'Edit & Hapus Item Aktif' : 'Koleksi & Wishlist'}
-            </div>
+            <div className="text-2xl font-bold text-[#17352b]">🌿</div>
+            <div className="mt-1 text-xs text-[#70827a]">Aquascaper</div>
           </div>
         </div>
       </div>
@@ -152,13 +196,13 @@ export default function ProfilPage({ wishlistCount, user, onUpdateUser, onLogout
       {/* Edit Form */}
       <form onSubmit={handleSave} className="rounded-[24px] border border-[#dfe6dc] bg-white p-6 shadow-sm">
         <h3 className="mb-5 text-sm font-bold text-[#315d4b]">
-          Edit Username, Foto & Email
+          Edit Data Profil
         </h3>
 
         {/* Username */}
         <div className="mb-4">
           <label htmlFor="prof-name" className="mb-1.5 block text-xs font-semibold text-[#315d4b]">
-            Username / Nama Lengkap
+            Nama Pengguna / Lengkap
           </label>
           <input
             id="prof-name"
@@ -172,7 +216,7 @@ export default function ProfilPage({ wishlistCount, user, onUpdateUser, onLogout
         </div>
 
         {/* Email */}
-        <div className="mb-4">
+        <div className="mb-6">
           <label htmlFor="prof-email" className="mb-1.5 block text-xs font-semibold text-[#315d4b]">
             Alamat Email
           </label>
@@ -187,57 +231,6 @@ export default function ProfilPage({ wishlistCount, user, onUpdateUser, onLogout
           />
         </div>
 
-        {/* Avatar URL */}
-        <div className="mb-4">
-          <label htmlFor="prof-avatar" className="mb-1.5 block text-xs font-semibold text-[#315d4b]">
-            URL Foto Profil / Avatar
-          </label>
-          <input
-            id="prof-avatar"
-            type="url"
-            value={avatarUrl}
-            onChange={(e) => setAvatarUrl(e.target.value)}
-            placeholder="https://..."
-            className="w-full rounded-xl border border-[#d9e2d6] bg-[#f8faf6] px-4 py-2.5 text-sm text-[#17352b] outline-none focus:border-[#2f6f53] focus:ring-2 focus:ring-[#2f6f53]/10"
-          />
-
-          {/* Preset Avatar Picker */}
-          <div className="mt-3">
-            <span className="block text-[11px] font-medium text-[#70827a] mb-2">
-              Atau pilih avatar cepat:
-            </span>
-            <div className="flex items-center gap-2">
-              {AVATAR_PRESETS.map((p, idx) => (
-                <button
-                  type="button"
-                  key={idx}
-                  onClick={() => setAvatarUrl(p)}
-                  className={`h-10 w-10 overflow-hidden rounded-full border-2 transition-transform hover:scale-110 ${
-                    avatarUrl === p ? 'border-[#0c2f27] ring-2 ring-[#c9f05b]' : 'border-transparent opacity-70 hover:opacity-100'
-                  }`}
-                >
-                  <img src={p} alt={`Avatar ${idx}`} className="h-full w-full object-cover" />
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Bio */}
-        <div className="mb-6">
-          <label htmlFor="prof-bio" className="mb-1.5 block text-xs font-semibold text-[#315d4b]">
-            Bio / Catatan Aquascape
-          </label>
-          <textarea
-            id="prof-bio"
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            placeholder="Ceritakan tentang aquascape atau tank favoritmu..."
-            rows={2}
-            className="w-full rounded-xl border border-[#d9e2d6] bg-[#f8faf6] px-4 py-2.5 text-sm text-[#17352b] outline-none focus:border-[#2f6f53] focus:ring-2 focus:ring-[#2f6f53]/10 resize-none"
-          />
-        </div>
-
         {/* Submit Button */}
         <button
           type="submit"
@@ -247,7 +240,7 @@ export default function ProfilPage({ wishlistCount, user, onUpdateUser, onLogout
           {loading ? (
             <>
               <Icon name="loader" size={16} className="animate-spin" />
-              <span>Menyimpan...</span>
+              <span>Menyimpan ke Supabase...</span>
             </>
           ) : (
             <>
