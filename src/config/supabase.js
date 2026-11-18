@@ -184,3 +184,148 @@ export async function registerWithSupabase({ username, email, password, role = '
   }
   return null
 }
+
+// =========================================================
+// HELPER DIRECT REST SUPABASE: TANAMAN (PLANTS)
+// =========================================================
+
+export async function fetchPlantsFromSupabase() {
+  const url = `${SUPABASE_URL}/rest/v1/plants?select=*&order=created_at.desc`
+  const res = await fetch(url, { method: 'GET', headers })
+  if (!res.ok) throw new Error(`Supabase error (${res.status})`)
+  return await res.json()
+}
+
+export async function updatePlantInSupabase(id, payload) {
+  const allowed = [
+    'name', 'scientific_name', 'type', 'difficulty', 'light',
+    'co2', 'growth_rate', 'description', 'care_tips', 'image_url',
+  ]
+  const clean = {}
+  for (const k of allowed) {
+    if (payload[k] !== undefined) clean[k] = payload[k]
+  }
+
+  const url = `${SUPABASE_URL}/rest/v1/plants?id=eq.${id}`
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+    body: JSON.stringify(clean),
+  })
+  if (!res.ok) throw new Error(`Supabase update error (${res.status})`)
+  const rows = await res.json()
+  return rows?.[0] || clean
+}
+
+export async function deletePlantFromSupabase(id) {
+  const url = `${SUPABASE_URL}/rest/v1/plants?id=eq.${id}`
+  const res = await fetch(url, { method: 'DELETE', headers })
+  if (!res.ok) throw new Error(`Supabase delete error (${res.status})`)
+  return true
+}
+
+export async function createPlantInSupabase(payload) {
+  const url = `${SUPABASE_URL}/rest/v1/plants`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error(`Supabase create error (${res.status})`)
+  const rows = await res.json()
+  return rows?.[0]
+}
+
+// =========================================================
+// HELPER DIRECT REST SUPABASE: BIOTA (FAUNA)
+// =========================================================
+
+export async function fetchFaunaFromSupabase() {
+  const url = `${SUPABASE_URL}/rest/v1/fauna?select=*&order=created_at.desc`
+  const res = await fetch(url, { method: 'GET', headers })
+  if (!res.ok) throw new Error(`Supabase error (${res.status})`)
+  return await res.json()
+}
+
+export async function updateFaunaInSupabase(id, payload) {
+  const allowed = [
+    'name', 'scientific_name', 'type', 'difficulty', 'water_temp',
+    'ph_range', 'tank_size', 'compatibility', 'description', 'care_tips', 'image_url',
+  ]
+  const clean = {}
+  for (const k of allowed) {
+    if (payload[k] !== undefined) clean[k] = payload[k]
+  }
+
+  const url = `${SUPABASE_URL}/rest/v1/fauna?id=eq.${id}`
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+    body: JSON.stringify(clean),
+  })
+  if (!res.ok) throw new Error(`Supabase update error (${res.status})`)
+  const rows = await res.json()
+  return rows?.[0] || clean
+}
+
+export async function deleteFaunaFromSupabase(id) {
+  const url = `${SUPABASE_URL}/rest/v1/fauna?id=eq.${id}`
+  const res = await fetch(url, { method: 'DELETE', headers })
+  if (!res.ok) throw new Error(`Supabase delete error (${res.status})`)
+  return true
+}
+
+export async function createFaunaInSupabase(payload) {
+  const url = `${SUPABASE_URL}/rest/v1/fauna`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error(`Supabase create error (${res.status})`)
+  const rows = await res.json()
+  return rows?.[0]
+}
+
+// =========================================================
+// HELPER DIRECT REST SUPABASE: WISHLIST
+// =========================================================
+
+export async function fetchWishlistFromSupabase(userId) {
+  let url = `${SUPABASE_URL}/rest/v1/wishlist?select=*&order=created_at.desc`
+  if (userId) {
+    url = `${SUPABASE_URL}/rest/v1/wishlist?user_id=eq.${encodeURIComponent(userId)}&select=*&order=created_at.desc`
+  }
+  const res = await fetch(url, { method: 'GET', headers })
+  if (!res.ok) throw new Error(`Supabase wishlist error (${res.status})`)
+  return await res.json()
+}
+
+export async function addWishlistToSupabase(payload) {
+  const url = `${SUPABASE_URL}/rest/v1/wishlist`
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error(`Supabase wishlist add error (${res.status})`)
+  const rows = await res.json()
+  return rows?.[0]
+}
+
+export async function removeWishlistFromSupabase(id, userId) {
+  let url = `${SUPABASE_URL}/rest/v1/wishlist?id=eq.${id}`
+  if (userId) {
+    url = `${SUPABASE_URL}/rest/v1/wishlist?id=eq.${id}&user_id=eq.${encodeURIComponent(userId)}`
+  }
+  const res = await fetch(url, { method: 'DELETE', headers })
+  if (!res.ok) {
+    // Coba hapus berdasarkan item_id jika id adalah item_id
+    let fallbackUrl = `${SUPABASE_URL}/rest/v1/wishlist?item_id=eq.${id}`
+    if (userId) {
+      fallbackUrl += `&user_id=eq.${encodeURIComponent(userId)}`
+    }
+    await fetch(fallbackUrl, { method: 'DELETE', headers })
+  }
+  return true
+}

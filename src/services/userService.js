@@ -322,10 +322,3 @@ class UserService {
 }
 
 export default new UserService()
-    } catch {
-      return []
-    }
-  }
-}
-
-export default new UserService()

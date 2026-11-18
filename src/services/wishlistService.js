@@ -1,5 +1,10 @@
 import { apiClient } from '../config/api'
 import userService from './userService'
+import {
+  fetchWishlistFromSupabase,
+  addWishlistToSupabase,
+  removeWishlistFromSupabase,
+} from '../config/supabase'
 
 class WishlistService {
   /**
@@ -39,10 +44,23 @@ class WishlistService {
   }
 
   /**
-   * Mengambil data wishlist dari backend API (Supabase) khusus untuk user yang sedang login
+   * Mengambil data wishlist dari Supabase langsung (atau backend API) khusus untuk user yang sedang login
    */
   async getWishlist(userId) {
     const uid = this.getUserId(userId)
+    
+    // 1. Coba ambil langsung dari Supabase REST (bekerja di HP Android & Vercel)
+    try {
+      const data = await fetchWishlistFromSupabase(uid)
+      if (Array.isArray(data)) {
+        this.saveLocal(data, uid)
+        return data
+      }
+    } catch (err) {
+      console.warn('[wishlistService] Direct Supabase fetch failed, trying local API:', err.message)
+    }
+
+    // 2. Coba lewat backend local API jika aktif
     try {
       const url = uid ? `/api/wishlists?userId=${encodeURIComponent(uid)}` : '/api/wishlists'
       const data = await apiClient.get(url)
@@ -53,6 +71,7 @@ class WishlistService {
     } catch (err) {
       console.warn('[wishlistService] Gagal fetch dari API, memuat cache lokal:', err.message)
     }
+
     return this.getLocal(uid)
   }
 
@@ -84,16 +103,31 @@ class WishlistService {
     // Simpan ke cache lokal user
     this.saveLocal([newItem, ...current], uid)
 
-    // Kirim ke API Supabase
+    const payload = {
+      user_id: uid,
+      item_id: strItemId,
+      item_type: item.item_type,
+      item_name: item.item_name,
+      item_image: item.item_image,
+      notes: item.notes || '',
+    }
+
+    // 1. Kirim langsung ke Supabase REST
     try {
-      const payload = {
-        user_id: uid,
-        item_id: strItemId,
-        item_type: item.item_type,
-        item_name: item.item_name,
-        item_image: item.item_image,
-        notes: item.notes || '',
+      const saved = await addWishlistToSupabase(payload)
+      if (saved && saved.id) {
+        const updated = this.getLocal(uid).map((w) =>
+          w.id === tempId ? { ...w, id: saved.id, ...saved } : w,
+        )
+        this.saveLocal(updated, uid)
+        return { success: true, data: saved }
       }
+    } catch (err) {
+      console.warn('[wishlistService] Direct Supabase save error, trying local API:', err.message)
+    }
+
+    // 2. Fallback lewat backend Express jika direct gagal
+    try {
       const saved = await apiClient.post('/api/wishlists', payload)
       if (saved && saved.id) {
         const updated = this.getLocal(uid).map((w) =>
@@ -103,7 +137,7 @@ class WishlistService {
         return { success: true, data: saved }
       }
     } catch (err) {
-      console.warn('[wishlistService] Gagal simpan ke API Supabase, tersimpan di lokal:', err.message)
+      console.warn('[wishlistService] Gagal simpan ke API, tersimpan di lokal:', err.message)
     }
 
     return { success: true, data: newItem }
@@ -121,13 +155,22 @@ class WishlistService {
     )
     this.saveLocal(updated, uid)
 
+    // 1. Coba hapus langsung dari Supabase REST
+    try {
+      await removeWishlistFromSupabase(target, uid)
+      return { success: true }
+    } catch (err) {
+      console.warn('[wishlistService] Direct Supabase remove error, trying local API:', err.message)
+    }
+
+    // 2. Fallback lewat API Express
     try {
       const url = uid
         ? `/api/wishlists/${target}?userId=${encodeURIComponent(uid)}`
         : `/api/wishlists/${target}`
       await apiClient.delete(url)
     } catch (err) {
-      console.warn('[wishlistService] Gagal hapus dari API Supabase, dihapus di lokal:', err.message)
+      console.warn('[wishlistService] Gagal hapus dari API, dihapus di lokal:', err.message)
     }
 
     return { success: true }
