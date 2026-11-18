@@ -59,8 +59,8 @@ export default function DetailView({
             {itemType} · {item.type}
           </span>
           {isAdmin && (
-            <span className="rounded-full bg-amber-400 px-2.5 py-0.5 text-[10px] font-bold text-amber-950">
-              Admin Mode
+            <span className="rounded-full bg-[#c9f05b] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#0c2f27] shadow-sm">
+              🛡️ Admin Mode
             </span>
           )}
         </div>
@@ -111,21 +111,21 @@ export default function DetailView({
           </div>
         )}
 
-        {/* Admin Quick Action Bar */}
+        {/* Admin Quick Action Bar (Nuansa Hijau Web) */}
         {isAdmin && (
           <div className="mt-6 flex items-center gap-3">
             <button
               onClick={() => onEdit && onEdit(item, itemType)}
-              className="flex flex-1 h-12 items-center justify-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 px-4 text-xs font-bold text-amber-800 transition hover:bg-amber-100"
+              className="flex flex-1 h-12 items-center justify-center gap-2 rounded-2xl border border-[#b8ceb4] bg-[#e8f1e5] px-4 text-xs font-bold text-[#0c2f27] transition hover:bg-[#c9f05b] active:scale-95"
             >
-              <Icon name="edit" size={16} />
+              <Icon name="edit" size={16} strokeWidth={2} />
               Edit Data
             </button>
             <button
               onClick={() => onDelete && onDelete(item, itemType)}
-              className="flex flex-1 h-12 items-center justify-center gap-2 rounded-2xl border border-rose-300 bg-rose-50 px-4 text-xs font-bold text-rose-700 transition hover:bg-rose-100"
+              className="flex flex-1 h-12 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0c2f27] px-4 text-xs font-bold text-[#c9f05b] shadow-md transition hover:bg-[#15463b] active:scale-95"
             >
-              <Icon name="trash" size={16} />
+              <Icon name="trash" size={16} strokeWidth={2} />
               Hapus Item
             </button>
           </div>

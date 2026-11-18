@@ -45,11 +45,11 @@ export default function CatalogCard({
           {item.type || itemType}
         </span>
 
-        {/* Action buttons (Admin Edit/Delete di samping tombol Wishlist) */}
+        {/* Action buttons (Admin Edit/Delete di samping tombol Wishlist dengan nuansa hijau web) */}
         <div className="absolute right-4 top-4 flex items-center gap-1.5">
           {isAdmin && (
             <>
-              {/* Tombol Edit Admin */}
+              {/* Tombol Edit Admin (Nuansa Hijau Web) */}
               <button
                 type="button"
                 title={`Edit data ${item.name}`}
@@ -58,12 +58,12 @@ export default function CatalogCard({
                   e.stopPropagation()
                   if (onEdit) onEdit(item, itemType)
                 }}
-                className="grid h-10 w-10 place-items-center rounded-full bg-white/90 text-amber-700 backdrop-blur-md shadow-md transition-transform hover:scale-110 hover:bg-amber-50 active:scale-95"
+                className="grid h-10 w-10 place-items-center rounded-full bg-white/90 text-[#0c2f27] shadow-md backdrop-blur-md transition-all hover:scale-110 hover:bg-[#c9f05b] active:scale-95"
               >
-                <Icon name="edit" size={17} />
+                <Icon name="edit" size={17} strokeWidth={2} />
               </button>
 
-              {/* Tombol Hapus Admin */}
+              {/* Tombol Hapus Admin (Nuansa Hijau Web) */}
               <button
                 type="button"
                 title={`Hapus ${item.name}`}
@@ -72,9 +72,9 @@ export default function CatalogCard({
                   e.stopPropagation()
                   if (onDelete) onDelete(item, itemType)
                 }}
-                className="grid h-10 w-10 place-items-center rounded-full bg-white/90 text-rose-600 backdrop-blur-md shadow-md transition-transform hover:scale-110 hover:bg-rose-50 active:scale-95"
+                className="grid h-10 w-10 place-items-center rounded-full bg-[#0c2f27]/90 text-[#c9f05b] shadow-md backdrop-blur-md transition-all hover:scale-110 hover:bg-[#15463b] active:scale-95"
               >
-                <Icon name="trash" size={17} />
+                <Icon name="trash" size={17} strokeWidth={2} />
               </button>
             </>
           )}
@@ -88,7 +88,7 @@ export default function CatalogCard({
               onWishlistToggle(item, itemType)
             }}
             className={`grid h-10 w-10 place-items-center rounded-full backdrop-blur-md shadow-md transition-transform hover:scale-105 active:scale-95 ${
-              isSaved ? 'bg-[#c9f05b] text-[#17352b]' : 'bg-white/85 text-[#49665a]'
+              isSaved ? 'bg-[#c9f05b] text-[#17352b]' : 'bg-white/85 text-[#49665a] hover:bg-white'
             }`}
           >
             <span className={isSaved ? 'fill-heart' : ''}>

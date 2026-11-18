@@ -3,6 +3,7 @@ import { Icon } from '../components/Icon'
 import CatalogCard from '../components/CatalogCard'
 import DetailView from '../components/DetailView'
 import ItemEditModal from '../components/ItemEditModal'
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
 import { useFauna } from '../hooks/useFauna'
 import faunaService from '../services/faunaService'
 
@@ -16,6 +17,11 @@ export default function BiotaPage({ wishlist, onWishlistToggle, user }) {
   // State untuk modal edit item
   const [editingItem, setEditingItem] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  // State untuk modal konfirmasi hapus data
+  const [itemToDelete, setItemToDelete] = useState(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+
   const [notification, setNotification] = useState('')
 
   const isAdmin = user?.role === 'admin'
@@ -40,22 +46,27 @@ export default function BiotaPage({ wishlist, onWishlistToggle, user }) {
     setIsModalOpen(true)
   }
 
-  const handleDelete = async (item) => {
-    const confirmDelete = window.confirm(
-      `Apakah Anda yakin ingin menghapus data biota "${item.name}"?`,
-    )
-    if (!confirmDelete) return
+  const handleDeleteRequest = (item) => {
+    setItemToDelete(item)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return
+    setDeleteLoading(true)
 
     try {
-      await faunaService.deleteFauna(item.id)
-      setNotification(`Biota "${item.name}" berhasil dihapus.`)
+      await faunaService.deleteFauna(itemToDelete.id)
+      setNotification(`Biota "${itemToDelete.name}" berhasil dihapus.`)
       setTimeout(() => setNotification(''), 3000)
-      if (selectedItem?.id === item.id) {
+      if (selectedItem?.id === itemToDelete.id) {
         setSelectedItem(null)
       }
+      setItemToDelete(null)
       refetch()
     } catch (err) {
       alert(`Gagal menghapus biota: ${err.message}`)
+    } finally {
+      setDeleteLoading(false)
     }
   }
 
@@ -83,7 +94,7 @@ export default function BiotaPage({ wishlist, onWishlistToggle, user }) {
           isSaved={isSaved}
           isAdmin={isAdmin}
           onEdit={handleEdit}
-          onDelete={handleDelete}
+          onDelete={handleDeleteRequest}
         />
         <ItemEditModal
           isOpen={isModalOpen}
@@ -94,6 +105,14 @@ export default function BiotaPage({ wishlist, onWishlistToggle, user }) {
             setEditingItem(null)
           }}
           onSaveSuccess={handleSaveSuccess}
+        />
+        <ConfirmDeleteModal
+          isOpen={!!itemToDelete}
+          item={itemToDelete}
+          itemType="Biota"
+          onClose={() => setItemToDelete(null)}
+          onConfirm={handleConfirmDelete}
+          loading={deleteLoading}
         />
       </>
     )
@@ -108,7 +127,7 @@ export default function BiotaPage({ wishlist, onWishlistToggle, user }) {
             Koleksi biota
           </p>
           {isAdmin && (
-            <span className="rounded-full bg-amber-100 px-3 py-1 text-[11px] font-bold text-amber-800 border border-amber-300">
+            <span className="rounded-full bg-[#c9f05b] px-3.5 py-1 text-[11px] font-bold text-[#0c2f27] shadow-sm">
               🛡️ Mode Admin Aktif
             </span>
           )}
@@ -123,7 +142,7 @@ export default function BiotaPage({ wishlist, onWishlistToggle, user }) {
 
       {/* Notification Toast */}
       {notification && (
-        <div className="mb-6 flex items-center gap-2 rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-xs font-bold text-emerald-800 shadow-sm">
+        <div className="mb-6 flex items-center gap-2 rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-xs font-bold text-emerald-800 shadow-sm animate-fade-in">
           <Icon name="check" size={16} />
           <span>{notification}</span>
         </div>
@@ -196,7 +215,7 @@ export default function BiotaPage({ wishlist, onWishlistToggle, user }) {
                 onWishlistToggle={onWishlistToggle}
                 isAdmin={isAdmin}
                 onEdit={handleEdit}
-                onDelete={handleDelete}
+                onDelete={handleDeleteRequest}
               />
             ))}
           </div>
@@ -213,6 +232,16 @@ export default function BiotaPage({ wishlist, onWishlistToggle, user }) {
           setEditingItem(null)
         }}
         onSaveSuccess={handleSaveSuccess}
+      />
+
+      {/* Modal Konfirmasi Hapus Data (Gaya Hijau AquascapeHub) */}
+      <ConfirmDeleteModal
+        isOpen={!!itemToDelete}
+        item={itemToDelete}
+        itemType="Biota"
+        onClose={() => setItemToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        loading={deleteLoading}
       />
     </div>
   )
