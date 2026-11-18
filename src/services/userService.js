@@ -86,8 +86,9 @@ class UserService {
           const user = rows[0]
           const finalUser = {
             ...user,
-            avatar_url: override.avatar_url || user.avatar_url,
-            username: override.username || user.username,
+            // Utamakan data live dari database Supabase
+            avatar_url: user.avatar_url || override.avatar_url,
+            username: user.username || override.username,
           }
           this.setCurrentUser(finalUser)
           this.saveUserOverride(finalUser)
@@ -132,6 +133,38 @@ class UserService {
     }
 
     throw new Error('Email atau password tidak sesuai')
+  }
+
+  /**
+   * Mengambil data profil user terbaru dari Supabase
+   * Menjamin foto profil yang diubah di HP langsung tersinkronisasi di Web laptop
+   */
+  async refreshCurrentUser() {
+    const current = this.getCurrentUser()
+    if (!current?.email) return null
+
+    if (IS_SUPABASE) {
+      try {
+        const query = `/rest/v1/users?email=eq.${encodeURIComponent(
+          current.email.toLowerCase().trim(),
+        )}&select=id,username,email,avatar_url,role,created_at`
+        const rows = await apiClient.get(query)
+        if (Array.isArray(rows) && rows.length > 0) {
+          const freshFromDb = rows[0]
+          const updatedUser = {
+            ...current,
+            ...freshFromDb,
+            avatar_url: freshFromDb.avatar_url || current.avatar_url,
+          }
+          this.setCurrentUser(updatedUser)
+          this.saveUserOverride(updatedUser)
+          return updatedUser
+        }
+      } catch (err) {
+        console.warn('[userService] Gagal sync profile terbaru dari Supabase:', err.message)
+      }
+    }
+    return current
   }
 
   async register({ username, email, password, role = 'pengguna', avatar_url = '' }) {

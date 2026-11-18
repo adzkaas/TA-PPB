@@ -35,6 +35,15 @@ function App() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstall)
     window.addEventListener('appinstalled', handleAppInstalled)
 
+    // Sinkronisasi data user & foto profil terbaru dari Supabase saat load
+    if (currentUser?.email) {
+      userService.refreshCurrentUser().then((fresh) => {
+        if (fresh && (fresh.avatar_url !== currentUser.avatar_url || fresh.username !== currentUser.username)) {
+          setCurrentUser(fresh)
+        }
+      })
+    }
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall)
       window.removeEventListener('appinstalled', handleAppInstalled)
@@ -47,6 +56,12 @@ function App() {
     // Jika tab 'wishlist' dibuka, bersihkan notifikasi unread
     if (tab === 'wishlist') {
       setUnreadCount(0)
+    }
+    // Jika tab profil dibuka, segarkan data user dari Supabase
+    if (tab === 'profil' && currentUser?.email) {
+      userService.refreshCurrentUser().then((fresh) => {
+        if (fresh) setCurrentUser(fresh)
+      })
     }
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
