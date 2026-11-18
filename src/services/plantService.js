@@ -1,62 +1,71 @@
-import { apiClient } from '../config/api'
-import {
-  fetchPlantsFromSupabase,
-  updatePlantInSupabase,
-  deletePlantFromSupabase,
-  createPlantInSupabase,
-} from '../config/supabase'
+import { apiClient, IS_SUPABASE } from '../config/api'
 
+// ---------------------------------------------------------------------------
+// PlantService — Layanan data katalog Tanaman Air (RESTful Web Service)
+// Mengikuti standar Modul 5: Mendukung Supabase PostgREST (/rest/v1/plants)
+// ---------------------------------------------------------------------------
 class PlantService {
   async getPlants() {
-    // 1. Prioritaskan Supabase langsung agar PWA Android & Vercel langsung terkoneksi
-    try {
-      const data = await fetchPlantsFromSupabase()
-      if (Array.isArray(data) && data.length > 0) {
-        return data
-      }
-    } catch (e) {
-      console.warn('[plantService] Direct Supabase fetch failed, trying local API:', e.message)
+    if (IS_SUPABASE) {
+      const data = await apiClient.get('/rest/v1/plants?select=*&order=created_at.desc')
+      return Array.isArray(data) ? data : []
     }
-
-    // 2. Coba lewat backend local API jika aktif
-    try {
-      return await apiClient.get('/api/plants')
-    } catch (err) {
-      throw err
-    }
+    return apiClient.get('/api/plants')
   }
 
   async getPlantById(id) {
-    try {
-      const plants = await this.getPlants()
-      return plants.find((p) => String(p.id) === String(id)) || null
-    } catch {
-      return await apiClient.get(`/api/plants/${id}`)
+    if (IS_SUPABASE) {
+      const data = await apiClient.get(`/rest/v1/plants?id=eq.${id}&select=*`)
+      if (Array.isArray(data) && data.length > 0) {
+        return data[0]
+      }
+      throw new Error('Data tanaman tidak ditemukan.')
     }
+    return apiClient.get(`/api/plants/${id}`)
   }
 
   async createPlant(data) {
-    try {
-      return await createPlantInSupabase(data)
-    } catch {
-      return await apiClient.post('/api/plants', data)
+    if (IS_SUPABASE) {
+      const res = await apiClient.post('/rest/v1/plants', data, {
+        headers: { Prefer: 'return=representation' },
+      })
+      return Array.isArray(res) ? res[0] : res
     }
+    return apiClient.post('/api/plants', data)
   }
 
   async updatePlant(id, data) {
-    try {
-      return await updatePlantInSupabase(id, data)
-    } catch {
-      return await apiClient.put(`/api/plants/${id}`, data)
+    if (IS_SUPABASE) {
+      const allowed = [
+        'name',
+        'scientific_name',
+        'type',
+        'difficulty',
+        'light',
+        'co2',
+        'growth_rate',
+        'description',
+        'care_tips',
+        'image_url',
+      ]
+      const clean = {}
+      for (const k of allowed) {
+        if (data[k] !== undefined) clean[k] = data[k]
+      }
+      const res = await apiClient.patch(`/rest/v1/plants?id=eq.${id}`, clean, {
+        headers: { Prefer: 'return=representation' },
+      })
+      return Array.isArray(res) ? res[0] : res
     }
+    return apiClient.put(`/api/plants/${id}`, data)
   }
 
   async deletePlant(id) {
-    try {
-      return await deletePlantFromSupabase(id)
-    } catch {
-      return await apiClient.delete(`/api/plants/${id}`)
+    if (IS_SUPABASE) {
+      await apiClient.delete(`/rest/v1/plants?id=eq.${id}`)
+      return { success: true }
     }
+    return apiClient.delete(`/api/plants/${id}`)
   }
 }
 
