@@ -1,0 +1,47 @@
+// Data lokal fallback untuk biota/fauna akuarium
+const FAUNA_LOCAL = [
+  {
+    id: 'local-f1',
+    name: 'Harlequin Rasbora',
+    scientific_name: 'Trigonostigma heteromorpha',
+    type: 'Ikan Schooling',
+    difficulty: 'Mudah',
+    water_temp: '22–27°C',
+    ph_range: '6.0–7.5',
+    tank_size: 'Min. 60L',
+    compatibility: 'Damai, cocok dengan ikan kecil lain',
+    description: 'Ikan schooling kecil dengan corak segitiga hitam di tubuhnya yang sangat menawan.',
+    care_tips: 'Pelihara dalam kelompok minimal 8–10 ekor agar tampak natural.',
+    image_url: 'https://images.unsplash.com/photo-1782811559994-6c28e26c6307?auto=format&fit=crop&w=900&q=85',
+  },
+  {
+    id: 'local-f2',
+    name: 'Neon Tetra',
+    scientific_name: 'Paracheirodon innesi',
+    type: 'Ikan Schooling',
+    difficulty: 'Mudah',
+    water_temp: '20–26°C',
+    ph_range: '5.5–7.0',
+    tank_size: 'Min. 40L',
+    compatibility: 'Damai, hindari ikan predator besar',
+    description: 'Ikan hias ikonik dengan garis biru neon yang mencolok. Salah satu ikan paling populer di dunia.',
+    care_tips: 'Butuh air lunak dan gelap untuk menampilkan warna terbaik.',
+    image_url: 'https://images.unsplash.com/photo-1636045466232-539c7bd7817e?auto=format&fit=crop&w=900&q=85',
+  },
+  {
+    id: 'local-f3',
+    name: 'Amano Shrimp',
+    scientific_name: 'Caridina multidentata',
+    type: 'Udang Algae Eater',
+    difficulty: 'Mudah',
+    water_temp: '18–28°C',
+    ph_range: '6.0–7.5',
+    tank_size: 'Min. 20L',
+    compatibility: 'Damai, hindari ikan yang memangsa udang',
+    description: 'Udang pembersih algae terbaik untuk aquascape. Aktif dan efektif memakan berbagai jenis alga.',
+    care_tips: 'Pelihara dalam kelompok 5+ ekor. Sensitif terhadap amonia dan nitrit.',
+    image_url: 'https://images.unsplash.com/photo-1559827291-72f6b82b9bce?auto=format&fit=crop&w=900&q=85',
+  },
+]
+
+export default FAUNA_LOCAL

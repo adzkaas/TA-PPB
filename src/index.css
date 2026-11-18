@@ -1,0 +1,185 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Serif+Display:ital@0;1&display=swap");
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    font-family: "DM Sans", sans-serif;
+    color: #17352b;
+    background: #f3f6ef;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  ::selection {
+    color: #17352b;
+    background: #c9f05b;
+  }
+}
+
+.serif-accent {
+  font-family: "DM Serif Display", serif;
+}
+
+.water-lines {
+  position: absolute;
+  inset: 0;
+  opacity: 0.15;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 75% 20%, rgba(201, 240, 91, 0.25), transparent 28%),
+    repeating-radial-gradient(
+      ellipse at 80% -10%,
+      transparent 0,
+      transparent 42px,
+      rgba(255, 255, 255, 0.12) 43px,
+      transparent 45px
+    );
+}
+
+.hero-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.catalog-card {
+  box-shadow: 0 8px 24px rgba(22, 61, 47, 0.04);
+  transition:
+    transform 250ms ease,
+    box-shadow 250ms ease;
+}
+
+.catalog-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(22, 61, 47, 0.1);
+}
+
+.fill-heart svg {
+  fill: currentColor;
+}
+
+@keyframes fadeInSmooth {
+  from {
+    opacity: 0.5;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeInSmooth 0.45s ease-out;
+}
+
+/* Splash Screen */
+.splash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #0c2f27;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  animation: splashFadeIn 0.5s ease;
+}
+
+.splash-overlay--fading {
+  animation: splashFadeOut 0.6s ease forwards;
+}
+
+@keyframes splashFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes splashFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.splash-logo {
+  width: 100px;
+  height: 100px;
+  border-radius: 28px;
+  background: #c9f05b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0c2f27;
+  animation: splashPulse 2s ease infinite;
+}
+
+@keyframes splashPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.splash-brand-name {
+  font-size: 32px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.04em;
+}
+
+.splash-brand-sub {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+
+.splash-skip-btn {
+  margin-top: 32px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 24px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.7);
+  font-size: 13px;
+  font-weight: 600;
+  background: transparent;
+  transition: background 0.2s, color 0.2s;
+}
+
+.splash-skip-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
