@@ -75,6 +75,7 @@ export default function ProfilPage({ wishlistCount, user, onUpdateUser, onLogout
       let updatedUserData = {
         username: editUsername.trim(),
         email: editEmail.trim(),
+        avatar_url: avatarUrl,
       }
 
       // 1. Jika ada file foto baru yang dipilih, upload ke Supabase Storage Bucket 'avatars'
@@ -86,7 +87,7 @@ export default function ProfilPage({ wishlistCount, user, onUpdateUser, onLogout
         }
       }
 
-      // 2. Update data username dan email
+      // 2. Update data username, email, dan avatar_url
       const updated = await userService.updateProfile(user?.id || 'demo-user', updatedUserData)
 
       if (onUpdateUser) {
