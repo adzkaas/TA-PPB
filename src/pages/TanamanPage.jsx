@@ -41,6 +41,11 @@ export default function TanamanPage({ wishlist, onWishlistToggle, user }) {
     })
   }, [plants, search, filter])
 
+  const handleAddNew = () => {
+    setEditingItem(null)
+    setIsModalOpen(true)
+  }
+
   const handleEdit = (item) => {
     setEditingItem(item)
     setIsModalOpen(true)
@@ -70,11 +75,12 @@ export default function TanamanPage({ wishlist, onWishlistToggle, user }) {
     }
   }
 
-  const handleSaveSuccess = (updatedItem) => {
-    setNotification(`Data tanaman "${updatedItem.name}" berhasil diperbarui.`)
+  const handleSaveSuccess = (savedItem) => {
+    const isNew = !editingItem?.id
+    setNotification(`Data tanaman "${savedItem.name}" berhasil ${isNew ? 'ditambahkan' : 'diperbarui'}.`)
     setTimeout(() => setNotification(''), 3000)
-    if (selectedItem?.id === updatedItem.id) {
-      setSelectedItem(updatedItem)
+    if (selectedItem?.id === savedItem.id) {
+      setSelectedItem(savedItem)
     }
     refetch()
   }
@@ -126,6 +132,15 @@ export default function TanamanPage({ wishlist, onWishlistToggle, user }) {
           <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#4b8268]">
             Koleksi tanaman
           </p>
+          {isAdmin && (
+            <button
+              onClick={handleAddNew}
+              className="flex items-center gap-1.5 rounded-full bg-[#0c2f27] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#15463b] transition-all hover:scale-105"
+            >
+              <Icon name="plus" size={15} />
+              <span>Tambah Tanaman</span>
+            </button>
+          )}
         </div>
         <h1 className="text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
           Tanaman Air

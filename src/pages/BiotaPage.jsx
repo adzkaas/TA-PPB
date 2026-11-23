@@ -41,6 +41,11 @@ export default function BiotaPage({ wishlist, onWishlistToggle, user }) {
     })
   }, [fauna, search, filter])
 
+  const handleAddNew = () => {
+    setEditingItem(null)
+    setIsModalOpen(true)
+  }
+
   const handleEdit = (item) => {
     setEditingItem(item)
     setIsModalOpen(true)
@@ -70,11 +75,12 @@ export default function BiotaPage({ wishlist, onWishlistToggle, user }) {
     }
   }
 
-  const handleSaveSuccess = (updatedItem) => {
-    setNotification(`Data biota "${updatedItem.name}" berhasil diperbarui.`)
+  const handleSaveSuccess = (savedItem) => {
+    const isNew = !editingItem?.id
+    setNotification(`Data biota "${savedItem.name}" berhasil ${isNew ? 'ditambahkan' : 'diperbarui'}.`)
     setTimeout(() => setNotification(''), 3000)
-    if (selectedItem?.id === updatedItem.id) {
-      setSelectedItem(updatedItem)
+    if (selectedItem?.id === savedItem.id) {
+      setSelectedItem(savedItem)
     }
     refetch()
   }
@@ -126,6 +132,15 @@ export default function BiotaPage({ wishlist, onWishlistToggle, user }) {
           <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#4b8268]">
             Koleksi biota
           </p>
+          {isAdmin && (
+            <button
+              onClick={handleAddNew}
+              className="flex items-center gap-1.5 rounded-full bg-[#0c2f27] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#15463b] transition-all hover:scale-105"
+            >
+              <Icon name="plus" size={15} />
+              <span>Tambah Biota</span>
+            </button>
+          )}
         </div>
         <h1 className="text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
           Biota Akuarium
@@ -165,11 +180,10 @@ export default function BiotaPage({ wishlist, onWishlistToggle, user }) {
           <button
             key={type}
             onClick={() => setFilter(type)}
-            className={`whitespace-nowrap rounded-full px-5 py-2.5 text-xs font-bold transition-colors ${
-              filter === type
+            className={`whitespace-nowrap rounded-full px-5 py-2.5 text-xs font-bold transition-colors ${filter === type
                 ? 'bg-[#173f34] text-white'
                 : 'border border-[#d7e0d4] bg-transparent text-[#62766d] hover:bg-white'
-            }`}
+              }`}
           >
             {type}
           </button>

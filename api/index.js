@@ -1,10 +1,10 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import plantRoutes from './routes/plantRoutes.js';
-import faunaRoutes from './routes/faunaRoutes.js';
-import wishlistRoutes from './routes/wishlistRoutes.js';
-import userRoutes from './routes/userRoutes.js';
+import plantRoutes from '../server/routes/plantRoutes.js';
+import faunaRoutes from '../server/routes/faunaRoutes.js';
+import wishlistRoutes from '../server/routes/wishlistRoutes.js';
+import userRoutes from '../server/routes/userRoutes.js';
 
 dotenv.config();
 

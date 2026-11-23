@@ -4,7 +4,25 @@ import plantService from '../services/plantService'
 import faunaService from '../services/faunaService'
 
 export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveSuccess }) {
-  const [formData, setFormData] = useState({})
+  const isPlant = itemType === 'Tanaman'
+  const isNew = !item?.id
+
+  const [formData, setFormData] = useState({
+    name: '',
+    scientific_name: '',
+    type: '',
+    difficulty: 'Mudah',
+    image_url: '',
+    description: '',
+    care_tips: '',
+    light: '',
+    co2: '',
+    growth_rate: '',
+    water_temp: '',
+    ph_range: '',
+    tank_size: '',
+    compatibility: '',
+  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -18,22 +36,36 @@ export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveS
         image_url: item.image_url || '',
         description: item.description || '',
         care_tips: item.care_tips || '',
-        // Plant specific
         light: item.light || '',
         co2: item.co2 || '',
         growth_rate: item.growth_rate || '',
-        // Fauna specific
         water_temp: item.water_temp || '',
         ph_range: item.ph_range || '',
         tank_size: item.tank_size || '',
         compatibility: item.compatibility || '',
       })
+    } else {
+      setFormData({
+        name: '',
+        scientific_name: '',
+        type: '',
+        difficulty: 'Mudah',
+        image_url: '',
+        description: '',
+        care_tips: '',
+        light: isPlant ? 'Sedang' : '',
+        co2: isPlant ? 'Disarankan' : '',
+        growth_rate: isPlant ? 'Sedang' : '',
+        water_temp: !isPlant ? '22–28°C' : '',
+        ph_range: !isPlant ? '6.0–7.5' : '',
+        tank_size: !isPlant ? 'Min. 40L' : '',
+        compatibility: !isPlant ? 'Damai' : '',
+      })
     }
-  }, [item])
+    setError('')
+  }, [item, isOpen, isPlant])
 
-  if (!isOpen || !item) return null
-
-  const isPlant = itemType === 'Tanaman'
+  if (!isOpen) return null
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -46,41 +78,49 @@ export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveS
     setError('')
 
     try {
-      let updated
+      let saved
       if (isPlant) {
         const plantPayload = {
-          name: formData.name,
-          scientific_name: formData.scientific_name,
-          type: formData.type,
-          difficulty: formData.difficulty,
-          light: formData.light,
-          co2: formData.co2,
-          growth_rate: formData.growth_rate,
-          description: formData.description,
-          care_tips: formData.care_tips,
-          image_url: formData.image_url,
+          name: formData.name.trim(),
+          scientific_name: formData.scientific_name.trim(),
+          type: formData.type.trim() || 'Stem Plant',
+          difficulty: formData.difficulty || 'Mudah',
+          light: formData.light || 'Sedang',
+          co2: formData.co2 || 'Disarankan',
+          growth_rate: formData.growth_rate || 'Sedang',
+          description: formData.description.trim() || 'Tanaman aquascape pilihan.',
+          care_tips: formData.care_tips.trim() || 'Lakukan pemangkasan rutin.',
+          image_url:
+            formData.image_url.trim() ||
+            'https://images.unsplash.com/photo-1630094129983-2c90e1fa129d?auto=format&fit=crop&w=900&q=80',
         }
-        updated = await plantService.updatePlant(item.id, plantPayload)
+        saved = isNew
+          ? await plantService.createPlant(plantPayload)
+          : await plantService.updatePlant(item.id, plantPayload)
       } else {
         const faunaPayload = {
-          name: formData.name,
-          scientific_name: formData.scientific_name,
-          type: formData.type,
-          difficulty: formData.difficulty,
-          water_temp: formData.water_temp,
-          ph_range: formData.ph_range,
-          tank_size: formData.tank_size,
-          compatibility: formData.compatibility,
-          description: formData.description,
-          care_tips: formData.care_tips,
-          image_url: formData.image_url,
+          name: formData.name.trim(),
+          scientific_name: formData.scientific_name.trim(),
+          type: formData.type.trim() || 'Ikan Schooling',
+          difficulty: formData.difficulty || 'Mudah',
+          water_temp: formData.water_temp || '22–28°C',
+          ph_range: formData.ph_range || '6.0–7.5',
+          tank_size: formData.tank_size || 'Min. 40L',
+          compatibility: formData.compatibility || 'Damai',
+          description: formData.description.trim() || 'Biota penghuni akuarium aquascape.',
+          care_tips: formData.care_tips.trim() || 'Jaga kualitas air dan filtrasi berkala.',
+          image_url:
+            formData.image_url.trim() ||
+            'https://images.unsplash.com/photo-1782811559994-6c28e26c6307?auto=format&fit=crop&w=900&q=80',
         }
-        updated = await faunaService.updateFauna(item.id, faunaPayload)
+        saved = isNew
+          ? await faunaService.createFauna(faunaPayload)
+          : await faunaService.updateFauna(item.id, faunaPayload)
       }
-      onSaveSuccess(updated || { ...item, ...formData })
+      onSaveSuccess(saved || { ...formData, id: isNew ? 'temp-' + Date.now() : item.id })
       onClose()
     } catch (err) {
-      setError(err?.response?.data?.error || err.message || 'Gagal menyimpan perubahan data')
+      setError(err?.response?.data?.error || err.message || 'Gagal menyimpan data ke database')
     } finally {
       setLoading(false)
     }
@@ -93,11 +133,11 @@ export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveS
         <div className="mb-4 flex items-center justify-between border-b border-[#e7ece4] pb-4">
           <div className="flex items-center gap-2.5">
             <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#c9f05b] text-[#0c2f27]">
-              <Icon name="edit" size={16} />
+              <Icon name={isNew ? 'plus' : 'edit'} size={16} />
             </span>
             <div>
               <h2 className="text-base font-bold text-[#0c2f27]">
-                Edit {itemType}: {item.name}
+                {isNew ? `Tambah ${itemType} Baru` : `Edit ${itemType}: ${item?.name}`}
               </h2>
             </div>
           </div>
@@ -125,7 +165,7 @@ export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveS
               name="image_url"
               value={formData.image_url}
               onChange={handleChange}
-              placeholder="https://..."
+              placeholder="https://images.unsplash.com/..."
               className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs outline-none focus:border-[#0c2f27] focus:bg-white"
             />
             {formData.image_url && (
@@ -134,7 +174,10 @@ export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveS
                   src={formData.image_url}
                   alt="Preview"
                   className="h-full w-full object-cover"
-                  onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1630094129983-2c90e1fa129d?auto=format&fit=crop&w=900&q=80' }}
+                  onError={(e) => {
+                    e.target.src =
+                      'https://images.unsplash.com/photo-1630094129983-2c90e1fa129d?auto=format&fit=crop&w=900&q=80'
+                  }}
                 />
               </div>
             )}
@@ -142,13 +185,16 @@ export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveS
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block font-semibold text-gray-700">Nama Populer</label>
+              <label className="mb-1 block font-semibold text-gray-700">
+                Nama Populer <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 required
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
+                placeholder={isPlant ? 'e.g. Bucephalandra' : 'e.g. Cardinal Tetra'}
                 className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs outline-none focus:border-[#0c2f27] focus:bg-white"
               />
             </div>
@@ -159,6 +205,7 @@ export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveS
                 name="scientific_name"
                 value={formData.scientific_name}
                 onChange={handleChange}
+                placeholder="e.g. Paracheirodon axelrodi"
                 className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs outline-none focus:border-[#0c2f27] focus:bg-white italic"
               />
             </div>
@@ -172,7 +219,7 @@ export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveS
                 name="type"
                 value={formData.type}
                 onChange={handleChange}
-                placeholder={isPlant ? "Foreground / Stem / Rhizome" : "Ikan Schooling / Udang"}
+                placeholder={isPlant ? 'Foreground / Stem / Rhizome' : 'Ikan Schooling / Udang'}
                 className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs outline-none focus:border-[#0c2f27] focus:bg-white"
               />
             </div>
@@ -201,7 +248,7 @@ export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveS
                   name="light"
                   value={formData.light}
                   onChange={handleChange}
-                  placeholder="Rendah - Tinggi"
+                  placeholder="Rendah / Sedang / Tinggi"
                   className="w-full rounded-xl border border-gray-200 bg-gray-50 px-2.5 py-2 text-xs outline-none focus:border-[#0c2f27] focus:bg-white"
                 />
               </div>
@@ -212,7 +259,7 @@ export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveS
                   name="co2"
                   value={formData.co2}
                   onChange={handleChange}
-                  placeholder="Rendah / Ya"
+                  placeholder="Tidak wajib / Disarankan / Wajib"
                   className="w-full rounded-xl border border-gray-200 bg-gray-50 px-2.5 py-2 text-xs outline-none focus:border-[#0c2f27] focus:bg-white"
                 />
               </div>
@@ -223,7 +270,7 @@ export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveS
                   name="growth_rate"
                   value={formData.growth_rate}
                   onChange={handleChange}
-                  placeholder="Lambat / Cepat"
+                  placeholder="Lambat / Sedang / Cepat"
                   className="w-full rounded-xl border border-gray-200 bg-gray-50 px-2.5 py-2 text-xs outline-none focus:border-[#0c2f27] focus:bg-white"
                 />
               </div>
@@ -240,7 +287,7 @@ export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveS
                   name="water_temp"
                   value={formData.water_temp}
                   onChange={handleChange}
-                  placeholder="22 - 28 °C"
+                  placeholder="22–28°C"
                   className="w-full rounded-xl border border-gray-200 bg-gray-50 px-2.5 py-2 text-xs outline-none focus:border-[#0c2f27] focus:bg-white"
                 />
               </div>
@@ -251,7 +298,7 @@ export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveS
                   name="ph_range"
                   value={formData.ph_range}
                   onChange={handleChange}
-                  placeholder="6.0 - 7.5"
+                  placeholder="6.0–7.5"
                   className="w-full rounded-xl border border-gray-200 bg-gray-50 px-2.5 py-2 text-xs outline-none focus:border-[#0c2f27] focus:bg-white"
                 />
               </div>
@@ -262,7 +309,7 @@ export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveS
                   name="tank_size"
                   value={formData.tank_size}
                   onChange={handleChange}
-                  placeholder="40 Liter"
+                  placeholder="Min. 40L"
                   className="w-full rounded-xl border border-gray-200 bg-gray-50 px-2.5 py-2 text-xs outline-none focus:border-[#0c2f27] focus:bg-white"
                 />
               </div>
@@ -276,6 +323,7 @@ export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveS
               value={formData.description}
               onChange={handleChange}
               rows={2}
+              placeholder="Karakteristik dan keunggulan..."
               className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs outline-none focus:border-[#0c2f27] focus:bg-white resize-none"
             />
           </div>
@@ -287,6 +335,7 @@ export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveS
               value={formData.care_tips}
               onChange={handleChange}
               rows={2}
+              placeholder="Cara penanaman, parameter air, pakan..."
               className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs outline-none focus:border-[#0c2f27] focus:bg-white resize-none"
             />
           </div>
@@ -313,7 +362,7 @@ export default function ItemEditModal({ item, itemType, isOpen, onClose, onSaveS
               ) : (
                 <>
                   <Icon name="check" size={14} />
-                  <span>Simpan Perubahan</span>
+                  <span>{isNew ? `Tambah ${itemType}` : 'Simpan Perubahan'}</span>
                 </>
               )}
             </button>
