@@ -1,9 +1,8 @@
-import { apiClient, IS_SUPABASE } from '../config/api'
-import uploadService from './uploadService'
+import { apiClient } from '../config/api'
 
 // ---------------------------------------------------------------------------
-// UserService — Layanan identitas pengguna, autentikasi, dan profil (Modul 5)
-// Berkomunikasi dengan RESTful Web Service Supabase (/rest/v1/users)
+// UserService — Layanan identitas pengguna, autentikasi, dan profil (Modul 1 & Modul 5)
+// Berkomunikasi dengan Express API backend di /api/users
 // ---------------------------------------------------------------------------
 const USER_STORAGE_KEY = 'aquascapehub_user'
 const USER_OVERRIDES_KEY = 'aquascapehub_user_overrides'
@@ -77,29 +76,27 @@ class UserService {
     const overrides = this.getUserOverrides()
     const override = overrides[emailKey] || {}
 
-    // 1. Coba login via REST API Supabase (/rest/v1/users)
-    if (IS_SUPABASE) {
-      try {
-        const query = `/rest/v1/users?email=eq.${encodeURIComponent(emailKey)}&password=eq.${encodeURIComponent(password)}&select=id,username,email,avatar_url,role,created_at`
-        const rows = await apiClient.get(query)
-        if (Array.isArray(rows) && rows.length > 0) {
-          const user = rows[0]
-          const finalUser = {
-            ...user,
-            // Utamakan data live dari database Supabase
-            avatar_url: user.avatar_url || override.avatar_url,
-            username: user.username || override.username,
-          }
-          this.setCurrentUser(finalUser)
-          this.saveUserOverride(finalUser)
-          return finalUser
+    // 1. Coba login via REST API Express backend (/api/users/login)
+    try {
+      const user = await apiClient.post('/api/users/login', {
+        email: emailKey,
+        password,
+      })
+      if (user && user.id) {
+        const finalUser = {
+          ...user,
+          avatar_url: user.avatar_url || override.avatar_url,
+          username: user.username || override.username,
         }
-      } catch (err) {
-        console.warn('[userService] Supabase login error, checking local/demo:', err.message)
+        this.setCurrentUser(finalUser)
+        this.saveUserOverride(finalUser)
+        return finalUser
       }
+    } catch (err) {
+      console.warn('[userService] Express login error, checking local/demo:', err.message)
     }
 
-    // 2. Fallback jika offline atau akun demo bawaan
+    // 2. Fallback jika server offline atau menggunakan akun demo bawaan
     const demo = DEMO_ACCOUNTS.find(
       (a) => a.email.toLowerCase() === emailKey && a.password === password,
     )
@@ -135,34 +132,26 @@ class UserService {
     throw new Error('Email atau password tidak sesuai')
   }
 
-  /**
-   * Mengambil data profil user terbaru dari Supabase
-   * Menjamin foto profil yang diubah di HP langsung tersinkronisasi di Web laptop
-   */
   async refreshCurrentUser() {
     const current = this.getCurrentUser()
     if (!current?.email) return null
 
-    if (IS_SUPABASE) {
-      try {
-        const query = `/rest/v1/users?email=eq.${encodeURIComponent(
-          current.email.toLowerCase().trim(),
-        )}&select=id,username,email,avatar_url,role,created_at`
-        const rows = await apiClient.get(query)
-        if (Array.isArray(rows) && rows.length > 0) {
-          const freshFromDb = rows[0]
-          const updatedUser = {
-            ...current,
-            ...freshFromDb,
-            avatar_url: freshFromDb.avatar_url || current.avatar_url,
-          }
-          this.setCurrentUser(updatedUser)
-          this.saveUserOverride(updatedUser)
-          return updatedUser
+    try {
+      const freshFromDb = await apiClient.get(
+        `/api/users/profile?email=${encodeURIComponent(current.email.toLowerCase().trim())}`,
+      )
+      if (freshFromDb && freshFromDb.id) {
+        const updatedUser = {
+          ...current,
+          ...freshFromDb,
+          avatar_url: freshFromDb.avatar_url || current.avatar_url,
         }
-      } catch (err) {
-        console.warn('[userService] Gagal sync profile terbaru dari Supabase:', err.message)
+        this.setCurrentUser(updatedUser)
+        this.saveUserOverride(updatedUser)
+        return updatedUser
       }
+    } catch (err) {
+      console.warn('[userService] Gagal sync profile terbaru dari Express API:', err.message)
     }
     return current
   }
@@ -172,28 +161,23 @@ class UserService {
       avatar_url ||
       'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80'
 
-    // 1. Registrasi langsung ke REST API Supabase (/rest/v1/users)
-    if (IS_SUPABASE) {
-      try {
-        const payload = {
-          username: username.trim(),
-          email: email.trim().toLowerCase(),
-          password,
-          role,
-          avatar_url: defaultAvatar,
-        }
-        const rows = await apiClient.post('/rest/v1/users', payload, {
-          headers: { Prefer: 'return=representation' },
-        })
-        const created = Array.isArray(rows) ? rows[0] : rows
-        if (created) {
-          this.setCurrentUser(created)
-          this.saveUserOverride(created)
-          return created
-        }
-      } catch (err) {
-        console.warn('[userService] Supabase register error, fallback ke lokal:', err.message)
+    // 1. Registrasi via REST API Express backend (/api/users/register)
+    try {
+      const payload = {
+        username: username.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+        role,
+        avatar_url: defaultAvatar,
       }
+      const created = await apiClient.post('/api/users/register', payload)
+      if (created && created.id) {
+        this.setCurrentUser(created)
+        this.saveUserOverride(created)
+        return created
+      }
+    } catch (err) {
+      console.warn('[userService] Express register error, fallback ke lokal:', err.message)
     }
 
     // 2. Fallback offline registration
@@ -217,34 +201,26 @@ class UserService {
     const currentUser = this.getCurrentUser() || {}
     let updatedUser = { ...currentUser, ...payload }
     const email = (payload.email || currentUser.email || '').toLowerCase().trim()
+    const targetId = id || currentUser.id || email
 
-    // 1. Update data di database Supabase via REST API
-    if (IS_SUPABASE && email) {
-      try {
-        const updateData = {}
-        if (payload.username !== undefined) updateData.username = payload.username
-        if (payload.avatar_url !== undefined) updateData.avatar_url = payload.avatar_url
-        if (payload.email !== undefined) updateData.email = payload.email
+    try {
+      const updateData = {}
+      if (payload.username !== undefined) updateData.username = payload.username
+      if (payload.avatar_url !== undefined) updateData.avatar_url = payload.avatar_url
+      if (payload.email !== undefined) updateData.email = payload.email
+      if (payload.bio !== undefined) updateData.bio = payload.bio
 
-        const rows = await apiClient.patch(
-          `/rest/v1/users?email=eq.${encodeURIComponent(email)}`,
-          updateData,
-          { headers: { Prefer: 'return=representation' } },
-        )
-        const updatedFromDb = Array.isArray(rows) ? rows[0] : rows
-        if (updatedFromDb) {
-          updatedUser = { ...updatedUser, ...updatedFromDb }
-        }
-      } catch (err) {
-        console.warn('[userService] Supabase update user error:', err.message)
+      const updatedFromDb = await apiClient.put(`/api/users/${encodeURIComponent(targetId)}`, updateData)
+      if (updatedFromDb && updatedFromDb.id) {
+        updatedUser = { ...updatedUser, ...updatedFromDb }
       }
+    } catch (err) {
+      console.warn('[userService] Express update user error:', err.message)
     }
 
-    // Simpan ke sesi aktif dan persistensi override
     this.setCurrentUser(updatedUser)
     this.saveUserOverride(updatedUser)
 
-    // Update di local storage jika ada
     const localUsers = this.getLocalRegisteredUsers()
     const idx = localUsers.findIndex(
       (u) => u.email?.toLowerCase() === updatedUser.email?.toLowerCase(),
@@ -257,29 +233,6 @@ class UserService {
     return updatedUser
   }
 
-  async uploadAvatar(id, file) {
-    const currentUser = this.getCurrentUser() || {}
-    const email = currentUser.email || 'user@aquascapehub.com'
-
-    try {
-      // Gunakan UploadService (Modul 5) untuk upload ke Supabase Storage bucket 'avatars'
-      const uploadRes = await uploadService.uploadImage(file, 'avatars')
-      if (uploadRes && uploadRes.data?.url) {
-        const publicUrl = uploadRes.data.url
-        const updated = await this.updateProfile(id, { avatar_url: publicUrl, email })
-        this.saveUserOverride(updated)
-        return updated
-      }
-    } catch (err) {
-      console.warn('[userService] Upload avatar error:', err.message)
-      throw err
-    }
-  }
-
-  logout() {
-    this.setCurrentUser(null)
-  }
-
   getLocalRegisteredUsers() {
     try {
       const raw = localStorage.getItem('aquascapehub_local_users')
@@ -287,6 +240,10 @@ class UserService {
     } catch {
       return []
     }
+  }
+
+  logout() {
+    this.setCurrentUser(null)
   }
 }
 

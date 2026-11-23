@@ -69,9 +69,8 @@ export default function Header({ activeTab, onTab, unreadCount = 0, user = null 
             <button
               key={item.id}
               onClick={() => onTab(item.id)}
-              className={`text-sm font-semibold transition-colors ${
-                activeTab === item.id ? 'text-[#c9f05b]' : 'text-white/65 hover:text-white'
-              }`}
+              className={`text-sm font-semibold transition-colors ${activeTab === item.id ? 'text-[#c9f05b]' : 'text-white/65 hover:text-white'
+                }`}
             >
               {item.label}
             </button>
@@ -95,11 +94,10 @@ export default function Header({ activeTab, onTab, unreadCount = 0, user = null 
           {/* 2. Tombol Wishlist (DI SEBELAH KANAN TOMBOL INSTALL) */}
           <button
             onClick={() => onTab('wishlist')}
-            className={`relative flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors ${
-              activeTab === 'wishlist'
-                ? 'border-[#c9f05b] bg-[#c9f05b]/10 text-[#c9f05b]'
-                : 'border-white/15 text-white/80 hover:bg-white/10 hover:text-white'
-            }`}
+            className={`relative flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors ${activeTab === 'wishlist'
+              ? 'border-[#c9f05b] bg-[#c9f05b]/10 text-[#c9f05b]'
+              : 'border-white/15 text-white/80 hover:bg-white/10 hover:text-white'
+              }`}
             title="Buka Wishlist"
           >
             <Icon name="shoppingBag" size={17} />
@@ -114,11 +112,10 @@ export default function Header({ activeTab, onTab, unreadCount = 0, user = null 
           {/* 3. Tombol Profil */}
           <button
             onClick={() => onTab('profil')}
-            className={`relative grid h-10 w-10 place-items-center overflow-hidden rounded-full border transition-colors ${
-              activeTab === 'profil'
-                ? 'border-[#c9f05b] bg-[#c9f05b]/10 text-[#c9f05b]'
-                : 'border-white/15 text-white/80 hover:bg-white/10 hover:text-white'
-            }`}
+            className={`relative grid h-10 w-10 place-items-center overflow-hidden rounded-full border transition-colors ${activeTab === 'profil'
+              ? 'border-[#c9f05b] bg-[#c9f05b]/10 text-[#c9f05b]'
+              : 'border-white/15 text-white/80 hover:bg-white/10 hover:text-white'
+              }`}
             title={`Buka Profil (${user?.username || 'Pengguna'})`}
           >
             {user?.avatar_url ? (

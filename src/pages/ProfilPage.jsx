@@ -7,7 +7,7 @@ export default function ProfilPage({ wishlistCount, user, onUpdateUser, onLogout
   const [username, setUsername] = useState(user?.username || 'Aquascaper')
   const [email, setEmail] = useState(user?.email || 'user@aquascapehub.com')
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || '')
-  
+
   // State saat dalam mode edit
   const [editUsername, setEditUsername] = useState(user?.username || 'Aquascaper')
   const [editEmail, setEditEmail] = useState(user?.email || 'user@aquascapehub.com')

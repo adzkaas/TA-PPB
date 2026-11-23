@@ -1,71 +1,33 @@
-import { apiClient, IS_SUPABASE } from '../config/api'
+import { apiClient } from '../config/api'
 
 // ---------------------------------------------------------------------------
-// PlantService — Layanan data katalog Tanaman Air (RESTful Web Service)
-// Mengikuti standar Modul 5: Mendukung Supabase PostgREST (/rest/v1/plants)
+// PlantService — Layanan data katalog Tanaman Air (RESTful Web Service Modul 1)
+// Berkomunikasi dengan Express API backend buatan sendiri di /api/plants
 // ---------------------------------------------------------------------------
 class PlantService {
   async getPlants() {
-    if (IS_SUPABASE) {
-      const data = await apiClient.get('/rest/v1/plants?select=*&order=created_at.desc')
-      return Array.isArray(data) ? data : []
-    }
-    return apiClient.get('/api/plants')
+    const data = await apiClient.get('/api/plants')
+    return Array.isArray(data) ? data : []
   }
 
   async getPlantById(id) {
-    if (IS_SUPABASE) {
-      const data = await apiClient.get(`/rest/v1/plants?id=eq.${id}&select=*`)
-      if (Array.isArray(data) && data.length > 0) {
-        return data[0]
-      }
-      throw new Error('Data tanaman tidak ditemukan.')
-    }
-    return apiClient.get(`/api/plants/${id}`)
+    const data = await apiClient.get(`/api/plants/${id}`)
+    return data
   }
 
   async createPlant(data) {
-    if (IS_SUPABASE) {
-      const res = await apiClient.post('/rest/v1/plants', data, {
-        headers: { Prefer: 'return=representation' },
-      })
-      return Array.isArray(res) ? res[0] : res
-    }
-    return apiClient.post('/api/plants', data)
+    const res = await apiClient.post('/api/plants', data)
+    return res
   }
 
   async updatePlant(id, data) {
-    if (IS_SUPABASE) {
-      const allowed = [
-        'name',
-        'scientific_name',
-        'type',
-        'difficulty',
-        'light',
-        'co2',
-        'growth_rate',
-        'description',
-        'care_tips',
-        'image_url',
-      ]
-      const clean = {}
-      for (const k of allowed) {
-        if (data[k] !== undefined) clean[k] = data[k]
-      }
-      const res = await apiClient.patch(`/rest/v1/plants?id=eq.${id}`, clean, {
-        headers: { Prefer: 'return=representation' },
-      })
-      return Array.isArray(res) ? res[0] : res
-    }
-    return apiClient.put(`/api/plants/${id}`, data)
+    const res = await apiClient.put(`/api/plants/${id}`, data)
+    return res
   }
 
   async deletePlant(id) {
-    if (IS_SUPABASE) {
-      await apiClient.delete(`/rest/v1/plants?id=eq.${id}`)
-      return { success: true }
-    }
-    return apiClient.delete(`/api/plants/${id}`)
+    const res = await apiClient.delete(`/api/plants/${id}`)
+    return res
   }
 }
 

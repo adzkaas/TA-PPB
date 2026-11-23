@@ -1,9 +1,9 @@
-import { apiClient, IS_SUPABASE } from '../config/api'
+import { apiClient } from '../config/api'
 import userService from './userService'
 
 // ---------------------------------------------------------------------------
-// WishlistService — Layanan data Wishlist per-user (RESTful Web Service)
-// Mengikuti standar Modul 5 (seperti FavoriteService di PWA2_PrakPPB)
+// WishlistService — Layanan data Wishlist per-user (RESTful Web Service Modul 1)
+// Berkomunikasi dengan Express API backend di /api/wishlist + offline fallback
 // ---------------------------------------------------------------------------
 class WishlistService {
   getUserId(passedUserId) {
@@ -60,11 +60,10 @@ class WishlistService {
 
   /**
    * Mengirimkan perubahan offline (tambah & hapus wishlist) yang tersimpan
-   * sementara di localStorage ke server database Supabase saat internet aktif kembali.
+   * sementara di localStorage ke server Express API saat internet aktif kembali.
    */
   async syncPending(userId) {
     if (typeof navigator !== 'undefined' && !navigator.onLine) return
-    if (!IS_SUPABASE) return
     const uid = this.getUserId(userId)
     if (!uid) return
 
@@ -74,15 +73,9 @@ class WishlistService {
       const remainingDels = []
       for (const delTarget of pendingDels) {
         try {
-          let url = `/rest/v1/wishlist?id=eq.${encodeURIComponent(delTarget)}&user_id=eq.${encodeURIComponent(uid)}`
-          await apiClient.delete(url)
+          await apiClient.delete(`/api/wishlist/${encodeURIComponent(delTarget)}?user_id=${encodeURIComponent(uid)}`)
         } catch {
-          try {
-            let fallbackUrl = `/rest/v1/wishlist?item_id=eq.${encodeURIComponent(delTarget)}&user_id=eq.${encodeURIComponent(uid)}`
-            await apiClient.delete(fallbackUrl)
-          } catch {
-            remainingDels.push(delTarget)
-          }
+          remainingDels.push(delTarget)
         }
       }
       this.savePendingDeletes(remainingDels, uid)
@@ -101,39 +94,31 @@ class WishlistService {
           item_image: item.item_image || '',
           notes: item.notes || '',
         }
-        const res = await apiClient.post('/rest/v1/wishlist', payload, {
-          headers: { Prefer: 'return=representation' },
-        })
-        const saved = Array.isArray(res) ? res[0] : res
+        const saved = await apiClient.post('/api/wishlist', payload)
         if (saved?.id) {
           const freshLocal = this.getLocal(uid)
           const updated = freshLocal.map((w) => (w.id === item.id ? { ...w, ...saved } : w))
           this.saveLocal(updated, uid)
         }
       } catch (err) {
-        console.warn('[wishlistService] Gagal sync pending item ke Supabase:', err.message)
+        console.warn('[wishlistService] Gagal sync pending item ke Express API:', err.message)
       }
     }
   }
 
   async getWishlist(userId) {
     const uid = this.getUserId(userId)
-    if (IS_SUPABASE) {
-      try {
-        // Sinkronkan antrean data offline terlebih dahulu sebelum fetch terbaru
-        await this.syncPending(uid)
+    try {
+      await this.syncPending(uid)
 
-        const url = uid
-          ? `/rest/v1/wishlist?user_id=eq.${encodeURIComponent(uid)}&select=*&order=created_at.desc`
-          : '/rest/v1/wishlist?select=*&order=created_at.desc'
-        const data = await apiClient.get(url)
-        if (Array.isArray(data)) {
-          this.saveLocal(data, uid)
-          return data
-        }
-      } catch (err) {
-        console.warn('[wishlistService] Supabase fetch error, fallback ke cache lokal:', err.message)
+      const url = uid ? `/api/wishlist?user_id=${encodeURIComponent(uid)}` : '/api/wishlist'
+      const data = await apiClient.get(url)
+      if (Array.isArray(data)) {
+        this.saveLocal(data, uid)
+        return data
       }
+    } catch (err) {
+      console.warn('[wishlistService] API fetch error, fallback ke cache lokal:', err.message)
     }
     return this.getLocal(uid)
   }
@@ -162,30 +147,25 @@ class WishlistService {
 
     this.saveLocal([newItem, ...current], uid)
 
-    if (IS_SUPABASE) {
-      try {
-        const payload = {
-          user_id: uid,
-          item_id: strItemId,
-          item_type: item.item_type,
-          item_name: item.item_name,
-          item_image: item.item_image,
-          notes: item.notes || '',
-        }
-        const res = await apiClient.post('/rest/v1/wishlist', payload, {
-          headers: { Prefer: 'return=representation' },
-        })
-        const saved = Array.isArray(res) ? res[0] : res
-        if (saved && saved.id) {
-          const updated = this.getLocal(uid).map((w) =>
-            w.id === tempId ? { ...w, id: saved.id, ...saved } : w,
-          )
-          this.saveLocal(updated, uid)
-          return { success: true, data: saved }
-        }
-      } catch (err) {
-        console.warn('[wishlistService] Gagal simpan ke Supabase, tersimpan lokal:', err.message)
+    try {
+      const payload = {
+        user_id: uid,
+        item_id: strItemId,
+        item_type: item.item_type,
+        item_name: item.item_name,
+        item_image: item.item_image,
+        notes: item.notes || '',
       }
+      const saved = await apiClient.post('/api/wishlist', payload)
+      if (saved && saved.id) {
+        const updated = this.getLocal(uid).map((w) =>
+          w.id === tempId ? { ...w, id: saved.id, ...saved } : w,
+        )
+        this.saveLocal(updated, uid)
+        return { success: true, data: saved }
+      }
+    } catch (err) {
+      console.warn('[wishlistService] Gagal simpan ke Express API, tersimpan lokal:', err.message)
     }
 
     return { success: true, data: newItem }
@@ -200,40 +180,24 @@ class WishlistService {
     )
     this.saveLocal(updated, uid)
 
-    if (IS_SUPABASE) {
-      try {
-        let url = `/rest/v1/wishlist?id=eq.${target}`
-        if (uid) url += `&user_id=eq.${encodeURIComponent(uid)}`
-        await apiClient.delete(url)
-      } catch (err) {
-        try {
-          let fallbackUrl = `/rest/v1/wishlist?item_id=eq.${target}`
-          if (uid) fallbackUrl += `&user_id=eq.${encodeURIComponent(uid)}`
-          await apiClient.delete(fallbackUrl)
-        } catch (e) {
-          console.warn('[wishlistService] Gagal delete dari Supabase, antrekan untuk sync saat online:', e.message)
-          // Simpan ke antrean pending deletes jika sedang offline
-          const dels = this.getPendingDeletes(uid)
-          if (!dels.includes(target) && !String(target).startsWith('temp-')) {
-            this.savePendingDeletes([...dels, target], uid)
-          }
-        }
+    try {
+      await apiClient.delete(`/api/wishlist/${encodeURIComponent(target)}?user_id=${encodeURIComponent(uid || '')}`)
+    } catch (err) {
+      console.warn('[wishlistService] Gagal hapus di Express API, ditambahkan ke antrean offline:', err.message)
+      const pendingDels = this.getPendingDeletes(uid)
+      if (!pendingDels.includes(target)) {
+        pendingDels.push(target)
+        this.savePendingDeletes(pendingDels, uid)
       }
     }
-
-    return { success: true }
   }
 
-  isInWishlist(item_id, item_type, userId) {
+  isInWishlist(itemId, itemType, userId) {
     const uid = this.getUserId(userId)
-    const current = this.getLocal(uid)
-    return current.some(
-      (w) => String(w.item_id) === String(item_id) && w.item_type === item_type,
+    const local = this.getLocal(uid)
+    return local.some(
+      (w) => String(w.item_id) === String(itemId) && w.item_type === itemType,
     )
-  }
-
-  getCount(userId) {
-    return this.getLocal(userId).length
   }
 }
 
