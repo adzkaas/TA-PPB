@@ -4,6 +4,7 @@ import CatalogCard from '../components/CatalogCard'
 import DetailView from '../components/DetailView'
 import ItemEditModal from '../components/ItemEditModal'
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
+import BiotaCompareModal from '../components/BiotaCompareModal'
 import { useFauna } from '../hooks/useFauna'
 import faunaService from '../services/faunaService'
 
@@ -23,6 +24,13 @@ export default function BiotaPage({ wishlist, onWishlistToggle, user }) {
   const [deleteLoading, setDeleteLoading] = useState(false)
 
   const [notification, setNotification] = useState('')
+
+  // State untuk fitur perbandingan 2 biota
+  const [isCompareMode, setIsCompareMode] = useState(false)
+  const [compareList, setCompareList] = useState([])
+  const [isCompareModalOpen, setIsCompareModalOpen] = useState(false)
+  const [compareResult, setCompareResult] = useState(null)
+  const [compareLoading, setCompareLoading] = useState(false)
 
   const isAdmin = user?.role === 'admin'
 
@@ -85,6 +93,41 @@ export default function BiotaPage({ wishlist, onWishlistToggle, user }) {
     refetch()
   }
 
+  const handleToggleCompareMode = () => {
+    if (isCompareMode) {
+      setIsCompareMode(false)
+      setCompareList([])
+    } else {
+      setIsCompareMode(true)
+      setCompareList([])
+    }
+  }
+
+  const handleToggleCompareItem = (item) => {
+    setCompareList((prev) => {
+      const exists = prev.some((b) => String(b.id) === String(item.id))
+      if (exists) {
+        return prev.filter((b) => String(b.id) !== String(item.id))
+      }
+      if (prev.length >= 2) {
+        return [prev[1], item]
+      }
+      return [...prev, item]
+    })
+  }
+
+  const runCompare = async (pair) => {
+    if (!pair || pair.length < 2) return
+    setIsCompareModalOpen(true)
+    setCompareLoading(true)
+    try {
+      const result = await faunaService.compareFauna(pair[0], pair[1])
+      setCompareResult(result)
+    } finally {
+      setCompareLoading(false)
+    }
+  }
+
   // Halaman detail
   if (selectedItem) {
     const isSaved = wishlist.some(
@@ -128,19 +171,34 @@ export default function BiotaPage({ wishlist, onWishlistToggle, user }) {
     <div className="mx-auto max-w-7xl px-5 py-10 pb-28 md:px-8">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#4b8268]">
             Koleksi biota
           </p>
-          {isAdmin && (
-            <button
-              onClick={handleAddNew}
-              className="flex items-center gap-1.5 rounded-full bg-[#0c2f27] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#15463b] transition-all hover:scale-105"
-            >
-              <Icon name="plus" size={15} />
-              <span>Tambah Biota</span>
-            </button>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {fauna.length >= 2 && (
+              <button
+                onClick={handleToggleCompareMode}
+                className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold shadow-sm transition-all hover:scale-105 ${
+                  isCompareMode
+                    ? 'bg-[#c9f05b] text-[#0c2f27]'
+                    : 'border border-[#0c2f27]/20 bg-white text-[#0c2f27] hover:bg-[#e8f4d8]'
+                }`}
+              >
+                <Icon name="compare" size={15} />
+                <span>{isCompareMode ? 'Batal Bandingkan' : 'Bandingkan 2 Biota'}</span>
+              </button>
+            )}
+            {isAdmin && (
+              <button
+                onClick={handleAddNew}
+                className="flex items-center gap-1.5 rounded-full bg-[#0c2f27] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#15463b] transition-all hover:scale-105"
+              >
+                <Icon name="plus" size={15} />
+                <span>Tambah Biota</span>
+              </button>
+            )}
+          </div>
         </div>
         <h1 className="text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
           Biota Akuarium
@@ -225,6 +283,9 @@ export default function BiotaPage({ wishlist, onWishlistToggle, user }) {
                 isAdmin={isAdmin}
                 onEdit={handleEdit}
                 onDelete={handleDeleteRequest}
+                isCompareMode={isCompareMode}
+                isSelectedForCompare={compareList.some((b) => String(b.id) === String(item.id))}
+                onToggleCompare={handleToggleCompareItem}
               />
             ))}
           </div>
@@ -251,6 +312,57 @@ export default function BiotaPage({ wishlist, onWishlistToggle, user }) {
         onClose={() => setItemToDelete(null)}
         onConfirm={handleConfirmDelete}
         loading={deleteLoading}
+      />
+
+      {/* Floating Bar Mode Bandingkan 2 Biota */}
+      {isCompareMode && (
+        <div className="fixed bottom-20 left-4 right-4 z-40 mx-auto max-w-xl rounded-2xl border border-[#0c2f27]/15 bg-[#0c2f27] p-4 text-white shadow-2xl md:bottom-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold text-[#c9f05b]">
+                Mode Bandingkan ({compareList.length}/2 dipilih)
+              </p>
+              <p className="mt-0.5 text-[11px] text-white/75">
+                {compareList.length === 0 && 'Klik 2 kartu biota untuk cek kecocokan suhu air & pH.'}
+                {compareList.length === 1 && `Dipilih: ${compareList[0].name}. Pilih 1 biota lagi.`}
+                {compareList.length === 2 && `${compareList[0].name} vs ${compareList[1].name}`}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleToggleCompareMode}
+                className="rounded-full border border-white/20 px-3.5 py-2 text-xs font-bold text-white/80 hover:bg-white/10"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={compareList.length < 2}
+                onClick={() => runCompare(compareList)}
+                className="rounded-full bg-[#c9f05b] px-4 py-2 text-xs font-bold text-[#0c2f27] transition hover:bg-[#d8f878] disabled:opacity-40"
+              >
+                Bandingkan Sekarang
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Perbandingan 2 Biota */}
+      <BiotaCompareModal
+        isOpen={isCompareModalOpen}
+        onClose={() => setIsCompareModalOpen(false)}
+        allFauna={fauna}
+        selectedPair={compareList}
+        onChangePair={(nextPair) => {
+          setCompareList(nextPair)
+          if (nextPair.length === 2 && nextPair[0] && nextPair[1]) {
+            runCompare(nextPair)
+          }
+        }}
+        compareResult={compareResult}
+        loading={compareLoading}
       />
     </div>
   )

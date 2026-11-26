@@ -1,10 +1,10 @@
 import axios from 'axios'
 
 // ---------------------------------------------------------------------------
-// Base URL Configuration untuk Express RESTful API (Modul 1)
+// Base URL Configuration untuk Express RESTful API
 // Saat pengembangan lokal atau di Vercel:
 // Menggunakan relative path '' sehingga request /api/... langsung diproses oleh
-// backend Express kita sendiri (via Vite proxy saat lokal, atau Vercel serverless di produksi).
+// backend Express (via Vite proxy saat lokal, atau Vercel serverless di produksi).
 // Jika VITE_API_BASE_URL diset di .env (misal http://localhost:3000), URL tersebut akan dipakai.
 // ---------------------------------------------------------------------------
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
@@ -46,3 +46,4 @@ apiClient.interceptors.response.use(
 )
 
 export { apiClient, BASE_URL }
+

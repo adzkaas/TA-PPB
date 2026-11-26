@@ -12,6 +12,9 @@ export default function CatalogCard({
   isAdmin = false,
   onEdit,
   onDelete,
+  isCompareMode = false,
+  isSelectedForCompare = false,
+  onToggleCompare,
 }) {
   const isSaved = wishlist
     ? wishlist.some(
@@ -27,8 +30,18 @@ export default function CatalogCard({
 
   return (
     <article
-      className="catalog-card group overflow-hidden rounded-[24px] border border-[#dfe6dc] bg-white cursor-pointer transition-all hover:shadow-lg"
-      onClick={() => onSelect(item)}
+      className={`catalog-card group overflow-hidden rounded-[24px] border bg-white cursor-pointer transition-all hover:shadow-lg ${
+        isSelectedForCompare
+          ? 'border-2 border-[#0c2f27] ring-4 ring-[#c9f05b]/50'
+          : 'border-[#dfe6dc]'
+      }`}
+      onClick={() => {
+        if (isCompareMode && onToggleCompare) {
+          onToggleCompare(item)
+        } else {
+          onSelect(item)
+        }
+      }}
     >
       {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden bg-[#dce8dc]">
@@ -129,11 +142,28 @@ export default function CatalogCard({
 
         {/* Detail button */}
         <button
-          onClick={(e) => { e.stopPropagation(); onSelect(item) }}
-          className="mt-5 flex w-full items-center justify-between rounded-xl bg-[#f0f5e9] px-4 py-3 text-xs font-bold text-[#315d4b] transition-colors hover:bg-[#e6f0d8]"
+          onClick={(e) => {
+            e.stopPropagation()
+            if (isCompareMode && onToggleCompare) {
+              onToggleCompare(item)
+            } else {
+              onSelect(item)
+            }
+          }}
+          className={`mt-5 flex w-full items-center justify-between rounded-xl px-4 py-3 text-xs font-bold transition-colors ${
+            isCompareMode
+              ? isSelectedForCompare
+                ? 'bg-[#0c2f27] text-[#c9f05b]'
+                : 'bg-[#e8f4d8] text-[#17352b] hover:bg-[#d8ecc0]'
+              : 'bg-[#f0f5e9] text-[#315d4b] hover:bg-[#e6f0d8]'
+          }`}
         >
-          Lihat detail
-          <Icon name="chevron" size={16} />
+          {isCompareMode
+            ? isSelectedForCompare
+              ? 'Dipilih untuk dibandingkan ✓'
+              : 'Pilih untuk dibandingkan'
+            : 'Lihat detail'}
+          <Icon name={isCompareMode && isSelectedForCompare ? 'check' : 'chevron'} size={16} />
         </button>
       </div>
     </article>

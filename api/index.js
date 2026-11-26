@@ -22,7 +22,7 @@ app.use('/api/users', userRoutes);
 // Root test endpoint
 app.get('/api', (req, res) => {
   res.json({
-    message: 'AquascapeHub RESTful API (Modul 1) is active and running',
+    message: 'AquascapeHub RESTful API is active and running',
     endpoints: [
       '/api/plants',
       '/api/fauna',
